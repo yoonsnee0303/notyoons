@@ -25,7 +25,6 @@ print("내부 IP: ", in_ip)
 req = requests.get("http://ipconfig.kr")
 ex_ip = re.search(r'IP Address : (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', req.text)[1]
 print("외부 IP: ", ex_ip)
-# time.sleep(1000)
 
 
 start_cnt = 0
@@ -48,7 +47,6 @@ if ex_ip != '183.100.232.2444':
             break
 
     print(start_cnt)
-
 
     import getpass
     path_input = getpass.getuser()
@@ -159,7 +157,7 @@ if ex_ip != '183.100.232.2444':
 
         image, img_width, img_hight, width_unit, hight_unit = 이미지확인(url)
         check = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
-        print(check)
+   
 
         return check
 
@@ -224,14 +222,14 @@ if ex_ip != '183.100.232.2444':
         now = datetime.datetime.now()
         now = now.strftime('%Y%m%d %H%M%S')
         
+        file_name = now.split('.')[0].replace('-','').replace(' ','_').replace(':','')
 
         #text #text #text #text #text #text #text #text 
 
         #01 상단
         main = soup.find('div', class_='cdtl_row_top').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
-        file_name = now.split('.')[0].replace('-','').replace(' ','_').replace(':','')
         check = txt_check(file_name,main)
-        if check == '동서가구':      
+        if check == '동서가구':    
             return '동서가구'
         elif main.count('현재판매중인상품이아닙니다'):
             print("품절 상품 / 패스")
@@ -249,7 +247,6 @@ if ex_ip != '183.100.232.2444':
             i += 1
             print(i)
         brief = brief_text
-        file_name = now.split('.')[0].replace('-','').replace(' ','_').replace(':','')
         check = txt_check(file_name,brief)
         if check == '동서가구':
             return '동서가구'
@@ -290,9 +287,14 @@ if ex_ip != '183.100.232.2444':
                 ##
                 check = img_check(img_url)
                 if check == '동서가구':
+                    print(check,'here1')  
+                    print(check,'here1')  
+                    print(check,'here1')  
+                    print(check,'here1')  
+
                     count = 0  
                     while count < len(lists):
-                        try:
+                        # try:
                             img_element = driver2.find_element(By.XPATH, f"//img[@src='{img_url}']")
                             print('find img_element')
 
@@ -316,26 +318,41 @@ if ex_ip != '183.100.232.2444':
                             print(blob.public_url)
                             print(f'File {image_file_path} was uploaded to Firebase Storage.')
                             count +=1
-                        except:
-                            pass
+                            print(count,'번째')
+                            print(check,'here2')  
+
+                        # except:
+                        #     pass
+                            break 
                     break
+            
+                # print(check,'here3')
+                # print(check,'here3')
+                # print(check,'here3')
+                # print(check,'here3')
+                # print(check,'here3')
             except:
                 pass
-
+        return check
         #img #img #img #img #img #img #img #img #img #img 
-
-
     for li in range(start_cnt, len(lists)):
         check = EA_cou_item_ck(lists[li])
+        print(check,'here4')
+        print(check,'here4')
+        print(check,'here4')
+        print(check,'here4')
+        print(check,'here4')
         if check == '동서가구':
             lists[li] = [lists[li],'스캔필요']
             #list_test csv파일로 저장
             with open('sin_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                 write = csv.writer(f)
                 write.writerows([lists])
+            print('스캔필요')
         else:
             lists[li] = [lists[li],'패스']
             #list_test csv파일로 저장
             with open('sin_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                 write = csv.writer(f)
                 write.writerows([lists])
+            print('패스')
