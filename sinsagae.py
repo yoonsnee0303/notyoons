@@ -1,358 +1,127 @@
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import storage
-
-# Firebase 서비스 계정의 키 파일 경로
-cred = credentials.Certificate('upload-img-5b02f-firebase-adminsdk-frojl-fe3e21064f.json')
-
-# Firebase 프로젝트 ID
-project_id = 'upload-img-5b02f.appspot.com'
-
-# Firebase 초기화
-firebase_admin.initialize_app(cred, {'storageBucket': f'{project_id}'})
-
-
-
-
+import os
 import time
-import socket
-import re
+import math
+import csv
+
+#크롬드라이버 버전 자동 설치
+import chromedriver_autoinstaller
+from numpy import source
+# Check if chrome driver is installed or not
+chrome_ver = chromedriver_autoinstaller.get_chrome_version().split('.')[0]
+driver_path = f'./{chrome_ver}/chromedriver.exe'
+if os.path.exists(driver_path):
+    #print(f"chrom driver is insatlled: {driver_path}")
+    pass
+else:
+    #print(f"install the chrome driver(ver: {chrome_ver})")
+    chromedriver_autoinstaller.install(True)
+
+#셀레니움
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.chrome.service import Service
+
+#크롬드라이버 콘솔창 제거_________________
+from subprocess import CREATE_NO_WINDOW
+service = Service(driver_path)
+service.creationflags = CREATE_NO_WINDOW
+
+
+# Selenium setting
+options = webdriver.ChromeOptions()
+options.add_argument("--disable-blink-features=AutomationControlled")
+options.add_experimental_option("excludeSwitches", ["enable-logging"])
+options.add_argument("no-sandbox")
+options.add_experimental_option("excludeSwitches", ["enable-automation"])
+options.add_experimental_option("useAutomationExtension", False)
+options.add_experimental_option("prefs", {"prfile.managed_default_content_setting.images": 2})
+options.add_argument("disable-infobars")
+options.add_argument("--disable-extensions")
+options.add_argument("--start-maximized")
+
+#options.add_argument('headless')            # headless모드 (창 비활성화)
+options.add_argument('disable-gpu')         # GPU 가속 종료
+options.add_argument("lang=ko_KR")          # 가짜 플러그인 탑재
+
+driver = webdriver.Chrome(options=options, service=service)
+actions = ActionChains(driver)
+
+from bs4 import BeautifulSoup as bs
+import time
 import requests
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(("pwnbit.kr", 443))
-in_ip = sock.getsockname()[0]
-print("내부 IP: ", in_ip)
-req = requests.get("http://ipconfig.kr")
-ex_ip = re.search(r'IP Address : (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', req.text)[1]
-print("외부 IP: ", ex_ip)
+
+with open('html_files.txt', 'r',encoding='utf-8') as f:
+    html = f.read()
+soup = bs(html,'html.parser')
+li_tags = soup.find_all('li', {'class': 'scp-component-category-item'})
 
 
-start_cnt = 0
-if ex_ip != '183.100.232.2444':
+label_tags = soup.find_all('label')
+cnt = 0
+tag_list = []
+for tag in label_tags:
+    if str(tag).__contains__('for="component'):
+        parent = tag.parent
+        if not str(parent).__contains__ ('href'):
+            cnt+=1
+            tag = str(tag).split(sep='=')[1].split(sep='t')[1].split(sep='"')[0]
+            tag_list.append(tag)
+    
 
-    import csv
-    #csv파일 list로 불러오기
-    #csv파일 list로 불러오기
-    #csv파일 list로 불러오기
-    with open('sin_list.csv', 'r', newline='', encoding='utf-8-sig') as f:
-        read = csv.reader(f)
-        lists = list(read)
-    lists = lists[0]
-    print(lists[0])
-    print(lists)
+tag_list = tag_list[1:]
 
-    for i in range(len(lists)):
-        if lists[i].count('스캔필요') + lists[i].count('패스') == 0:
-            start_cnt = i
-            break
+url_list = []
+for tag in tag_list:
+    url = f'https://store.coupang.com/vp/vendors/A00037308/product/lists?componentId={tag}&pageNum=1'
+    url_list.append(url)
+print('ck1')
 
-    print(start_cnt)
-
-    import getpass
-    path_input = getpass.getuser()
+# CSV 파일을 쓰기 모드로 열기
 
 
-    import pytesseract
-    import cv2
-    from matplotlib import pyplot as plt
-    import urllib.request
+for num,tag in enumerate(tag_list,start=1):
 
-
-    import pyautogui
-    from bs4 import BeautifulSoup as bs
-    import os
-    import urllib3
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    import csv
-    from PIL import Image
-    import sys
-    import unittest
-    from selenium import webdriver
-    from selenium.webdriver.common.by import By
-
-
-    import datetime
-    now = datetime.datetime.now
-
-
-
-
-
-    #텍스트 내 '동서가구' 로고 포함 여부 확인
-    #텍스트 내 '동서가구' 로고 포함 여부 확인
-    #이미지 내 '동서가구' 로고 포함 여부 확인
-    def txt_check(file_name,text):
-        if text.count("동서가구"):
-            pyautogui.screenshot(f'{file_name}_text.jpg')
-            image_file_path = f'./{file_name}_text.jpg'
-            bucket = storage.bucket()
-            blob = bucket.blob(f'{file_name}_text.jpg')
-            blob.upload_from_filename(image_file_path)
-            print(f'File {image_file_path} was uploaded to Firebase Storage.')
-            return '동서가구'
-        else:
-            return None
-
-    #이미지 내 '동서가구' 로고 포함 여부 확인
-    #이미지 내 '동서가구' 로고 포함 여부 확인
-    #이미지 내 '동서가구' 로고 포함 여부 확인
-    def img_check(url):
-        def 이미지확인(url):
-            pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
-            urllib.request.urlretrieve(url, "test1.png")
-            image = cv2.imread("test1.png", cv2.IMREAD_GRAYSCALE) # 흑백 이미지로 로드
-            img_width = int(image.shape[1])
-            img_hight = int(image.shape[0])
-            print(img_width, img_hight)
-
-            print(img_width/100)
-            width_unit = int(round(img_width/100))
-            hight_unit = int(round(img_hight/100))
-            print(width_unit)
-            # plt.imshow(image, cmap="gray"), plt.axis("off")
-            # plt.show()
-
-            return image, img_width, img_hight, width_unit, hight_unit
-
-
-
-        def 상단글자(image, width_unit, hight_unit, img_width, img_hight):
-            try:
-                width = 0
-
-                print('img_width:', img_width)
-                print('img_hight:', img_hight)
-                print('width_unit:', width_unit)
-                print('hight_unit:', hight_unit)
-
-                for hight in range(width_unit, img_hight, hight_unit):
-                    now_hight = (hight/img_hight)*50
-                    print(hight)
-
-                    if img_width != 1100:
-                        if hight >= 150:
-                            image_cropped = image[hight-150:hight, width:]
-                        else:
-                            image_cropped = image[:hight, width:]
-                    else :
-                        if hight >= 100:
-                            image_cropped = image[hight-100:hight, 300:]
-                        else:
-                            image_cropped = image[:hight, 300:]
-
-                    text = pytesseract.image_to_string(image_cropped, lang='kor').strip().replace(" ", "").replace("\n","")
-                    print(text)
-
-                    # plt.imshow(image_cropped, cmap="gray"), plt.axis("off")
-                    # plt.show()
-
-                    if now_hight > 30:
-                        return '이미지없음'
-                    elif text.count('동서가구') + text.count('동셔가구') + text.count('써가구')!= 0:
-                        #plt.show()
-                        return '동서가구'
-            except:
-                pass
-
-
-        image, img_width, img_hight, width_unit, hight_unit = 이미지확인(url)
-        check = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
-   
-
-        return check
-
-
-
-
-
-
-
-
-
-
-
-    #신세계 개별 상품 스캔
-    #신세계 개별 상품 스캔
-    #신세계 개별 상품 스캔
-    def EA_cou_item_ck(url):
-
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-        from selenium import webdriver
-        from selenium.webdriver.common.by import By
-        from selenium.webdriver.common.keys import Keys
-        from selenium.webdriver.common.action_chains import ActionChains
-        from selenium.webdriver.support.select import Select
-        from selenium.webdriver.chrome.service import Service
-        from selenium.webdriver.support import expected_conditions as EC
-        from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-        from selenium.webdriver.chrome.options import Options
-
-
-        import chromedriver_autoinstaller
-        chrome_ver = chromedriver_autoinstaller.get_chrome_version().split('.')[0]
-        driver_path = f'C:/Users/{path_input}/AppData/Local/Programs/Python/Python310\{chrome_ver}/chromedriver.exe'
-        if os.path.exists(driver_path):
-            print(f"chrome driver is installed: {driver_path}")
-        else:
-            print(f"install the chrome driver(ver: {chrome_ver})")
-            chromedriver_autoinstaller.install(True)
-
-
-        #옵션 - 셀레니움
-        options = webdriver.ChromeOptions()
-        options.add_argument("--disable-blink_features=AutomationControlled")
-        options.add_experimental_option("excludeSwitches",["enable_logging"])
-        options.add_argument("no_sandbox")
-        options.add_argument("--start-maximized")
-        options.add_argument("disable-infobars")
-        options.add_argument("--disable-extionsions")
-        options.add_experimental_option("useAutomationExtension",False)
-        #options.add_argument("headless")
-        options.add_argument("disable-gpu")
-        options.add_argument("lang=ko_KR")
-        driver = webdriver.Chrome(options=options)
+        driver = webdriver.Chrome(options=options, service=service)
         actions = ActionChains(driver)
 
+        # # driver.get(url)
+        url = f'https://store.coupang.com/vp/vendors/A00037308/product/lists?componentId={tag}&pageNum=1'
         driver.get(url)
-        time.sleep(3)
-        code = driver.page_source
-        soup = bs(code, 'html.parser')
+        elem = driver.find_element(By.TAG_NAME, 'body').text
 
-        now = datetime.datetime.now()
-        now = now.strftime('%Y%m%d %H%M%S')
-        
-        file_name = now.split('.')[0].replace('-','').replace(' ','_').replace(':','')
+        find_word = '"itemTotalCount":'
+        total_cnt = elem[elem.find(find_word) + len(find_word):]
+        total_cnt = total_cnt[:total_cnt.find(",")]
+        print(total_cnt)
 
-        #text #text #text #text #text #text #text #text 
+        cnt = math.ceil(int(total_cnt)/30)
 
-        #01 상단
-        main = soup.find('div', class_='cdtl_row_top').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
-        check = txt_check(file_name,main)
-        if check == '동서가구':    
-            return '동서가구'
-        elif main.count('현재판매중인상품이아닙니다'):
-            print("품절 상품 / 패스")
-            return
-
-        #02 기타 표기 정보 모두
-        brief = soup.find_all('div', class_="cdtl_cont_info")
-        brief_text = ''
-        i = 0
-        for br in brief:
-            brief_text = br.text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
-            if str.__contains__(brief_text,'동서가구'):
-                ActionChains(driver).move_to_element(driver.find_elements(By.CLASS_NAME,"cdtl_cont_info")[i]).perform()
-                break
-            i += 1
-            print(i)
-        brief = brief_text
-        check = txt_check(file_name,brief)
-        if check == '동서가구':
-            return '동서가구'
+        detail_url = []
+        file_path = 'detail_url.csv'
+        for pageNum in range(1, cnt+1): 
+            url = f'https://store.coupang.com/vp/vendors/A00037308/product/lists?componentId={tag}&pageNum={str(pageNum)}'
+            driver.get(url)
+            find_word = 'link'
+            elem = driver.find_element(By.TAG_NAME, 'body').text
+            cnt = elem.count(find_word)
+            for i in range(cnt):
+                search2 = elem[elem.find(find_word) + len(find_word)+3:]
+                elem = search2
+                search2 = search2[:search2.find('"')]
+                detail_url.append(search2)
+        with open(file_path, "a", newline='',encoding="utf-8") as f:
+            writer = csv.writer(f)
+            for url in detail_url:
+                writer.writerow([url])
+        time.sleep(2)
+        print(f'{num}/{len(tag_list)}')
+        driver.close()                
 
 
 
 
-        #04 이미지
-        elem = soup.find('span', class_='cdtl_imgbox imgzoom')
-        img_url = elem.find('img')['src']
-        ##
-        ##
-        ##
-        check = img_check(img_url)
-        if check == '동서가구':
-            return '동서가구'
+    
 
-        #05 상세페이지
-        elem = soup.find('div', class_='cdtl_capture_img')
-        iframe_url = elem.find('iframe')['src']
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'}
-        res = requests.get(iframe_url, headers=headers)
-        soup = bs(res.text, 'html.parser')
-
-        driver2 = webdriver.Chrome(options=options)
-        driver2.get(iframe_url)
-
-        time.sleep(1)
-
-        imgs = soup.find_all('img')
-        for img in imgs:
-            try:
-                src = img['src']
-                print(src)
-                img_url = src
-                ##
-                ##
-                ##
-                check = img_check(img_url)
-                if check == '동서가구':
-                    print(check,'here1')  
-                    print(check,'here1')  
-                    print(check,'here1')  
-                    print(check,'here1')  
-
-                    count = 0  
-                    while count < len(lists):
-                        # try:
-                            img_element = driver2.find_element(By.XPATH, f"//img[@src='{img_url}']")
-                            print('find img_element')
-
-                            location = img_element.location
-                            print(location)
-                            print(location)
-                            print(location)
-                            print(location)
-                            print(location)
-                            driver2.execute_script(f"window.scrollBy(0, {str(location['y'])});")
-                            time.sleep(2)
-
-                            pyautogui.screenshot(f'{file_name}_img.jpg')
-                            print('스크린샷 완료')
-                            print(f'{file_name}_img.jpg')
-
-                            image_file_path = f'{file_name}_img.jpg'
-                            bucket = storage.bucket()
-                            blob = bucket.blob(image_file_path) # 저장된 파일의 이름
-                            blob.upload_from_filename(image_file_path) # 등록할 파일의 이름
-                            print(blob.public_url)
-                            print(f'File {image_file_path} was uploaded to Firebase Storage.')
-                            count +=1
-                            print(count,'번째')
-                            print(check,'here2')  
-
-                        # except:
-                        #     pass
-                            break 
-                    break
-            
-                # print(check,'here3')
-                # print(check,'here3')
-                # print(check,'here3')
-                # print(check,'here3')
-                # print(check,'here3')
-            except:
-                pass
-        return check
-        #img #img #img #img #img #img #img #img #img #img 
-    for li in range(start_cnt, len(lists)):
-        check = EA_cou_item_ck(lists[li])
-        print(check,'here4')
-        print(check,'here4')
-        print(check,'here4')
-        print(check,'here4')
-        print(check,'here4')
-        if check == '동서가구':
-            lists[li] = [lists[li],'스캔필요']
-            #list_test csv파일로 저장
-            with open('sin_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
-                write = csv.writer(f)
-                write.writerows([lists])
-            print('스캔필요')
-        else:
-            lists[li] = [lists[li],'패스']
-            #list_test csv파일로 저장
-            with open('sin_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
-                write = csv.writer(f)
-                write.writerows([lists])
-            print('패스')
+    
