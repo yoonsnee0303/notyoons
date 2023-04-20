@@ -88,7 +88,7 @@ def main():
             time.sleep(0.5)
             driver.find_element(By.CLASS_NAME, 'btn.btn-black').click()
 
-            # 공급사 가져오기 페이지
+            # 공급사 선택
             elem = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.ID, "menu_order")))
             url = 'http://gdadmin.edftr76860385.godomall.com/order/order_list_all.php?view=orderGoods&'
@@ -102,7 +102,6 @@ def main():
             elem = driver.find_elements(
                 By.CLASS_NAME, 'pagination.pagination-sm')[1]
             lis = elem.find_elements(By.TAG_NAME, 'li')
-            print(len(lis))
 
             url_add = 'http://gdadmin.edftr76860385.godomall.com/order/order_list_all.php?detailSearch=n&scmFl=1'
             for page in range(1, len(lis)+1):
@@ -123,18 +122,15 @@ def main():
                         label_temp = label_no + '&scmNoNm[]=' + \
                             label_temp.replace(" ", "+")
                         url_add = url_add + label_temp
-            print('공급사 가져오기 완료')
 
+            # setting url
             now = datetime.now()
             today = now.strftime("%Y") + "-" + \
                 now.strftime("%m") + "-" + now.strftime("%d")
-            print(now)
-
-            month = now - relativedelta(months=1)
+            month = now - relativedelta(months=3)
             month3 = month.strftime(
                 "%Y") + "-" + month.strftime("%m") + "-" + month.strftime("%d")
-
-            data_EA = 50
+            data_EA = 5000
 
             url_add = url_add + \
                 f'''&key[]=o.orderNo&keyword[]=&key[]=o.orderNo&keyword[]=&key[]=o.orderNo&keyword[]=&goodsKey=og.goodsNm&goodsNo=&goodsText=&treatDateFl=og.regDt&searchPeriod=89&treatDate[]={month3}&treatTime[]=00:00:00&treatDate[]={today}&treatTime[]=23:59:59&orderTypeFl[]=&orderChannelFl[]=&orderStatus[]=&settleKind[]=&invoiceCompanySno=0&invoiceNoFl=&orderMemoCd=&memFl=&settlePrice[]=&settlePrice[]=&receiptFl=&overDepositDay=&underDeliveryDay=&sort=og.orderNo+desc&pageNum={data_EA}&view=orderGoods&searchFl=y&applyPath=/order/order_list_all.php?view=orderGoods'''
@@ -146,14 +142,13 @@ def main():
             # 자료 들고오기
             table = driver.find_element(
                 By.CLASS_NAME, 'table-responsive').get_attribute('innerHTML')
-            print('ck1')
             return driver, table
 
     def pros(driver, htmll):
+        import csv
         from bs4 import BeautifulSoup as bs
         import time
 
-        # print(htmll)
         soup = bs(htmll, 'html.parser')
         th = soup.find_all('th')
 
@@ -171,18 +166,18 @@ def main():
         tr = tbody.find_all('tr', class_='text-center')
 
         for trs in tr:
+
             # 날짜
             date = trs.find('td', class_='font-date nowrap').text.strip()[:10]
-            # print(date)
+
             # 시간
             ttime = trs.find('td', class_='font-date nowrap').text.strip()[10:]
-            # print(date)
+
             # 주소
             url = trs.find('td', class_='text-left').find('a')['href']
-            # print(url)
+
             # 이미지
             img = trs.find('td', class_='text-left').find('img')['src']
-            # print(img)
 
             # 상품명
             title = trs.find(
@@ -221,7 +216,6 @@ def main():
                 if title.count(items) > 0:
                     title = '결합상품 ' + title
 
-            # print(title)
             # 금지어확인1
             ck_code1 = False
             for ck in pass_title:
@@ -236,9 +230,9 @@ def main():
                     stateT = tds.find('div')
                     if stateT['title'] == '주문 상품별 주문 상태':
                         state = stateT.text
-                        # print(state)
                 except:
                     pass
+
             # 금지어확인2
             ck_code2 = False
             for ck in pass_state:
@@ -260,7 +254,6 @@ def main():
 
                 # 상품명에서 업체명 제거
                 title = title.replace(cpy, '').strip()
-                # print(cpy)
 
                 # 옵션명
                 try:
@@ -272,18 +265,15 @@ def main():
                             break
                 except:
                     opt = ' '
-                # print(opt)
                 
                 # 주문수
                 cnt = trs.find('td', class_='goods_cnt').text
-                # print(cnt)
 
                 # 상품가
                 td = trs.find_all('td')
                 for tds in td:
                     if tds.text.count('0원') > 0:
                         price = tds.text.replace('원', '').replace(',', '')
-                        # print(price)
                         break
 
                 # save temp
@@ -296,8 +286,11 @@ def main():
                 temp.append(price)
                 temp.append(state)
                 temp.append(ttime)
+
                 # save lists
                 lists.append(temp)
+
+
 
 
 
@@ -306,30 +299,6 @@ def main():
             for j in range(len(lists[i])):
                 lists[i][j] = lists[i][j].replace(', ', '_').replace(',', '')
 
-        import csv
-        # list_test csv파일로 저장
-        with open('brand_sample.csv', 'w', newline='', encoding='utf-8-sig') as f:
-            write = csv.writer(f)
-            write.writerows(lists)
-
-        time.sleep(2)
-
-        # csv파일 list로 불러오기
-        with open('brand_sample.csv', 'r', newline='', encoding='utf-8-sig') as f:
-            read = csv.reader(f)
-            lists = list(read)
-
-        for i in range(len(lists)):
-            if int(lists[i][7][:2]) >= 17 and int(lists[i][7][:2]) <= 23:
-                # print(lists[i][7])
-                cal_date = (datetime.strptime(
-                    lists[i][0], '%Y-%m-%d') + timedelta(days=1)).strftime("%Y-%m-%d")
-                lists[i].append(lists[i][0])
-                lists[i][0] = cal_date
-            else:
-                lists[i].append(lists[i][0])
-
-        # print(lists)
 
         # 가구 (구분) 그 외
         except_cpy = ['동서식품', '매일유업', '이지드롭', 'KN디지털']
@@ -350,20 +319,21 @@ def main():
         print('here to next')
         print('here to next')
         print('here to next')
-        print('here to next')
-        print('here to next')
-        print('here to next')
-        
 
-        print('ck3')
+
+        # setting_url2
+        # 결합상품 
         now = datetime.now()
         today = now.strftime("%Y") + "-" + \
                 now.strftime("%m") + "-" + now.strftime("%d")
-        data_EA = 50
+        data_EA = 5000
+
+        month = now - relativedelta(months=3)
+        month3 = month.strftime("%Y") + "-" + month.strftime("%m") + "-" + month.strftime("%d")
 
         url_add = 'http://gdadmin.edftr76860385.godomall.com/order/order_list_all.php?detailSearch=n&scmFl=all'
         url_add = url_add + \
-        f'''&key[]=o.orderNo&keyword[]=&key[]=o.orderNo&keyword[]=&key[]=o.orderNo&keyword[]=&goodsKey=og.goodsNm&goodsNo=&goodsText=결합상품&treatDateFl=og.regDt&searchPeriod=89&treatDate[]=2023-01-20&treatTime[]=00:00:00&treatDate[]={today}&treatTime[]=23:59:59&orderTypeFl[]=&orderChannelFl[]=&orderStatus[]=&settleKind[]=&invoiceCompanySno=0&invoiceNoFl=&orderMemoCd=&memFl=&settlePrice[]=&settlePrice[]=&receiptFl=&overDepositDay=&underDeliveryDay=&sort=og.orderNo+desc&pageNum={str(data_EA)}&view=orderGoods&searchFl=y&applyPath=/order/order_list_all.php?view=orderGoods'''
+        f'''&key[]=o.orderNo&keyword[]=&key[]=o.orderNo&keyword[]=&key[]=o.orderNo&keyword[]=&goodsKey=og.goodsNm&goodsNo=&goodsText=결합상품&treatDateFl=og.regDt&searchPeriod=89&treatDate[]={month3}&treatTime[]=00:00:00&treatDate[]={today}&treatTime[]=23:59:59&orderTypeFl[]=&orderChannelFl[]=&orderStatus[]=&settleKind[]=&invoiceCompanySno=0&invoiceNoFl=&orderMemoCd=&memFl=&settlePrice[]=&settlePrice[]=&receiptFl=&overDepositDay=&underDeliveryDay=&sort=og.orderNo+desc&pageNum={str(data_EA)}&view=orderGoods&searchFl=y&applyPath=/order/order_list_all.php?view=orderGoods'''
         print(url_add)
 
         # 검색
@@ -372,17 +342,15 @@ def main():
 
         # 자료 들고오기
         htmll = driver.find_element(By.CLASS_NAME, 'table-responsive').get_attribute('innerHTML')
-
-
-
-        # print(htmll)
+        
         soup = bs(htmll, 'html.parser')
         th = soup.find_all('th')
 
         tbody = soup.find('tbody')
         tr = tbody.find_all('tr', class_='text-center')
 
-
+        pass_title = ['교환', '환불', '반품']
+        pass_state = ['중단', '환불', '실패', '취소', '반품']
 
         for trs in tr: 
             # 날짜
@@ -390,167 +358,172 @@ def main():
 
             # 시간
             ttime = trs.find('td', class_='font-date nowrap').text.strip()[10:]
-            # print(date)
 
             # 주소
             url = trs.find('td', class_='text-left').find('a')['href']
-            # print(url)
 
             # 이미지
             img = trs.find('td', class_='text-left').find('img')['src']
-            # print(img)
 
             # 상품명
             title = trs.find(
                 'a', class_='one-line bold mgb5').text.replace('\n', '')
-            print(title)
 
             # replace_word1
-            title = title.replace("]", " ")
+            title = title.split(' ')[0].replace("]", " ").replace("[","")
 
             while True:
                 title = title.replace('  ', ' ')
                 if title.count('  ') == 0:
                     break
 
-            # # replace_words2
-            # for rps in replace_words:
-            #     title = title.replace(rps, '')
-            # title = title.strip()
 
-
-            print(lists[-1])
-            print('hhh')
-            print('hhh')
-            print('hhh')
-            print('hhh')
-            print('hhh')
+            # 금지어확인1
+            ck_code1 = False
+            for ck in pass_title:
+                if title.count(ck) > 0:
+                    ck_code1 = True
+                    break
 
             # 처리상태
             td = trs.find_all('td')
-
-            for tds in td: 
-                # 상품 상태
-                state = soup.find('div', {'title': '주문 상품별 주문 상태'}).text.strip()
-                # print(state)
-
-                # 업체명
-                cpy = title
-                cpy = cpy.split(' ')[0]
-                # print(cpy)
-
-                # 상품명에서 업체명 제거
-                title = title.replace(cpy, '').strip()
-                # print(title)
-
-                # 옵션명
+            for tds in td:
                 try:
-                    opt = trs.find(
-                        'div', class_='option_info').text.replace('\n', '')
-                    while True:
-                        opt = opt.replace('  ', ' ')
-                        if opt.count('  ') == 0:
-                            break
+                    stateT = tds.find('div')
+                    if stateT['title'] == '주문 상품별 주문 상태':
+                        state = stateT.text
                 except:
-                    opt = ' '
-                # print(opt)
+                    pass
+            # 금지어확인2
+            ck_code2 = False
+            for ck in pass_state:
+                if state.count(ck) > 0:
+                    ck_code2 = True
+                    break
 
-                # 주문수
-                cnt = trs.find('td', class_='goods_cnt').text
-                # print(cnt)
 
-                # 상품가
+            if ck_code1 == False and ck_code2 == False:
+
+                # 처리상태
                 td = trs.find_all('td')
-                for tds in td: #td
-                    if tds.text.count('0원') > 0:
-                        price = tds.text.replace('원', '').replace(',', '')
-                        # print(price)
-                        break
 
-                # save temp
-                temp = []
-                temp.append(date)
-                temp.append(cpy)
-                temp.append(f'{img}#{url}')
-                temp.append(f'{title}#{opt}')
-                temp.append(cnt)
-                temp.append(price)
-                temp.append(state)
-                temp.append(ttime)
-                print(temp)
+                for tds in td: 
+                    # 상품 상태
+                    state = soup.find('div', {'title': '주문 상품별 주문 상태'}).text.strip()
 
-                # save lists
-                lists.append(temp)
-                lists_1.append(temp)
+                    # 업체명
+                    cpy = title
 
-            print(lists[-1])
+                    # 옵션명
+                    try:
+                        opt = trs.find(
+                            'div', class_='option_info').text.replace('\n', '')
+                        while True:
+                            opt = opt.replace('  ', ' ')
+                            if opt.count('  ') == 0:
+                                break
+                    except:
+                        opt = ' '
+
+                    # 주문수
+                    cnt = trs.find('td', class_='goods_cnt').text
+
+                    # 상품가
+                    td = trs.find_all('td')
+                    for tds in td: #td
+                        if tds.text.count('0원') > 0:
+                            price = tds.text.replace('원', '').replace(',', '')
+                            break
+
+                    # save temp
+                    temp = []
+                    temp.append(date)
+                    temp.append(cpy)
+                    temp.append(f'{img}#{url}')
+                    temp.append(f'{title}#{opt}')
+                    temp.append(cnt)
+                    temp.append(price)
+                    temp.append(state)
+                    temp.append(ttime)
+
+                    # save lists
+                    lists.append(temp)
+                    lists_1.append(temp)
+
+
+        # setting date
+        for i in range(len(lists)):
+            if int(lists[i][7][:2]) >= 17 and int(lists[i][7][:2]) <= 23:
+                cal_date = (datetime.strptime(
+                    lists[i][0], '%Y-%m-%d') + timedelta(days=1)).strftime("%Y-%m-%d")
+                lists[i].append(lists[i][0])
+                lists[i][0] = cal_date
+            else:
+                lists[i].append(lists[i][0])
             
 
 
         # list_test csv파일로 저장
-        with open('brand_sample.csv', 'w', newline='', encoding='utf-8-sig') as f:
+        with open('brand.csv', 'w', newline='', encoding='utf-8-sig') as f:
             write = csv.writer(f)
             write.writerows(lists)
 
         # list_test csv파일로 저장
-        with open('brand_sample1.csv', 'w', newline='', encoding='utf-8-sig') as f:
+        with open('brand_1.csv', 'w', newline='', encoding='utf-8-sig') as f:
             write = csv.writer(f)
             write.writerows(lists_1)
 
         # list_test csv파일로 저장
-        with open('brand_sample2.csv', 'w', newline='', encoding='utf-8-sig') as f:
+        with open('brand_2.csv', 'w', newline='', encoding='utf-8-sig') as f:
             write = csv.writer(f)
             write.writerows(lists_2)
 
 
 
     
-    # def ftp_trans():
+    def ftp_trans():
 
-    #     import ftplib
-    #     try:
-    #         url = 'http://priceflow.co.kr'
-    #         dir = '/html/ds/df/br/'
-    #         session = ftplib.FTP()
-    #         session.connect('112.175.185.27', 21)
-    #         session.encoding = 'utf-8'
-    #         session.login("dailyroutine85", "dpg85kjp#")
-    #         session.cwd(dir)
-    #         # print(session.nlst())
+        import ftplib
+        try:
+            url = 'http://priceflow.co.kr'
+            dir = '/html/ds/df/br/'
+            session = ftplib.FTP()
+            session.connect('112.175.185.27', 21)
+            session.encoding = 'utf-8'
+            session.login("dailyroutine85", "dpg85kjp#")
+            session.cwd(dir)
 
-    #         uploadFiles = ['brand.csv', 'brand_1.csv', 'brand_2.csv', 'index.html', 'index_1.html', 'index_2.html', 'index_all.html']
-    #         for files in uploadFiles:
-    #             with open(file=files, mode='rb') as wf:
-    #                 session.storbinary(f'STOR {files}', wf)
-
-    #     except Exception as e:
-    #         print('error')
-    #         print(e)
-    #     print('done')
+            uploadFiles = ['brand.csv', 'brand_1.csv', 'brand_2.csv', 'index.html', 'index_1.html', 'index_2.html', 'index_all.html']
+            for files in uploadFiles:
+                with open(file=files, mode='rb') as wf:
+                    session.storbinary(f'STOR {files}', wf)
+            print('try')
+        except Exception as e:
+            print('error')
+            print(e)
+            print('except')
 
 
     # Main
     # Main
     # Main
-    # while True:
-    #     try:
-    #         driver, htmll= get()
-    #         lists,lists_1,lists_2 = pros(htmll) 
-    #         sub_pros(driver, lists,lists_1,lists_2)
-    #         # ftp_trans()
-    #         break
-    #     except:
-    #         pass
 
-    driver, htmll= get(driver)
-    pros(driver, htmll) 
-
-# # step3.실행 주기 설정
-# schedule.every(1).hours.do(main)
-
-# # step4.스캐쥴 시작
-# while True:
-#     schedule.run_pending()
-#     time.sleep(1)
+    while True:
+        try:
+            driver, htmll= get(driver)
+            pros(driver, htmll) 
+            ftp_trans()
+            break
+        except:
+            pass
 
 main()
+
+# step3.실행 주기 설정
+schedule.every(1).hours.do(main)
+
+# step4.스캐쥴 시작
+while True:
+    schedule.run_pending()
+    time.sleep(1)
+    print('done')
