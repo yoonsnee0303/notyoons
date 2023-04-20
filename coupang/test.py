@@ -1,7 +1,5 @@
 #테스트 url - 쿠팡-바스포르 벤더-동서가구 검색
 
-#https://store.coupang.com/vp/vendors/A00037308/products?vendorName=%28%EC%A3%BC%29%EB%B0%94%EC%8A%A4%ED%8F%AC%EB%A5%B4&productId=1668601&outboundShippingPlaceId=
-
 
 # 서버에서 오류가 발생했습니다
 
@@ -39,23 +37,23 @@ if ex_ip != '183.100.232.2444':
     #csv파일 list로 불러오기
     #csv파일 list로 불러오기
     #csv파일 list로 불러오기
-    with open('cou_list.csv', 'r', newline='', encoding='utf-8-sig') as f:
+
+    with open('cou_list.csv', 'r', newline='',encoding='utf-8-sig') as f:
         read = csv.reader(f)
         lists = list(read)
-    lists = [list for list in lists]
-    lists = lists[0]
-    print(lists)
-    print(len(lists))
-    
-    for i in range(len(lists)):
+        lists = lists[0]
+    print(lists[0].split(','))
+    time.sleep(1000)
 
-        if lists[i].count('스캔필요') + lists[i].count('패스') == 0:
+
+
+    for i in range(len(lists)):
+        if lists[i][-1].count('스캔필요') + lists[i][-1].count('패스') == 0:
             start_cnt = i
             break
 
-    print(start_cnt)
-
-
+    time.sleep(1000)
+    
     import getpass
     path_input = getpass.getuser()
 
@@ -128,7 +126,6 @@ if ex_ip != '183.100.232.2444':
                 print('img_hight:', img_hight)
                 print('width_unit:', width_unit)
                 print('hight_unit:', hight_unit)
-                # time.sleep(1000)
 
                 for hight in range(width_unit, img_hight, hight_unit):
                     now_hight = (hight/img_hight)*50
@@ -153,7 +150,7 @@ if ex_ip != '183.100.232.2444':
                     if now_hight > 30:
                         return '이미지없음', hight
                     elif text.count('동서가구') + text.count('동셔가구') + text.count('써가구') + text.count('등셔기포') + text.count('등서가로') + text.count('등서기로') != 0:
-                        #plt.show()
+                        # plt.show()
                         print(hight,'///',img_hight)
                         return '동서가구', hight
             except:
@@ -166,6 +163,7 @@ if ex_ip != '183.100.232.2444':
         print('hre')
 
         return check, hight
+    
 
 
 
@@ -220,7 +218,6 @@ if ex_ip != '183.100.232.2444':
         driver = webdriver.Chrome(options=options)
         actions = ActionChains(driver)
 
-
         driver.get(url)
         time.sleep(3)
         code = driver.page_source
@@ -229,7 +226,7 @@ if ex_ip != '183.100.232.2444':
         now = datetime.datetime.now()
         now = now.strftime('%Y%m%d %H%M%S')
         
-        file_name = now.split('.')[0].replace('-','').replace(' ','_').replace(':','')
+        file_name = 'baspore'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','')
 
 
         #text #text #text #text #text #text #text #text 
@@ -278,6 +275,7 @@ if ex_ip != '183.100.232.2444':
 
 
 
+
         if check == '동서가구':
             pyautogui.screenshot(f'{file_name}_img.jpg')
             print(f'{file_name}_img.jpg')
@@ -292,11 +290,12 @@ if ex_ip != '183.100.232.2444':
         #05 상세페이지
         detail = soup.find('div', id="productDetail")
         imgs = detail.find_all('img')
-
+        print(imgs)
+        print('ck1')
         for img in imgs:
             try:
                 src = img['src']
-                print(src)
+
                 img_url = src
                 ##
                 ##
@@ -304,17 +303,18 @@ if ex_ip != '183.100.232.2444':
                 check,hight = img_check(img_url)
                 if check == '동서가구':
                     count = 0
+
                     while count < len(lists) : #len(lists)
                         img_element = driver.find_element(By.XPATH, f"//img[@src='{img_url}']")
                         print('find img_element')
                         location = img_element.location
                         print(location)
 
-
                         script = "document.querySelector('.product-detail-seemore-btn').click();"
-                        driver.execute_script(script)
                         time.sleep(3)
-                        driver.execute_script(f"window.scrollBy(0, {location['y']} + {int(hight-300)});")
+                        driver.execute_script(script)
+                        driver.execute_script(f"window.scrollBy(0, {location['y']} + {int(hight)*0.5});")
+                        time.sleep(2)
 
                         pyautogui.screenshot(f'{file_name}_img.jpg')
                         print(f'{file_name}_img.jpg')
@@ -326,7 +326,8 @@ if ex_ip != '183.100.232.2444':
                         print(f'File {image_file_path} was uploaded to Firebase Storage.')
                         count +=1
                         break
-                break
+                    break
+                # break
             
             except:
                 pass
@@ -339,24 +340,24 @@ if ex_ip != '183.100.232.2444':
 
         #img #img #img #img #img #img #img #img #img #img 
 
-    print('hereherehereherehereherehere')
-    print(start_cnt)
-    print(len(lists))
-    cnt = 0
+
+    import datetime
+    print('시작', datetime.datetime.now())
+
     for li in range(start_cnt, len(lists)):
-        print(lists)
-        check = EA_cou_item_ck(lists[li])
-        cnt += 1
-        print(f'{cnt}/{len(lists)}')
-        if check == '동서가구':
-            lists[li] = [lists[li],'스캔필요']
-            #list_test csv파일로 저장
-            with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
-                write = csv.writer(f)
-                write.writerows([lists])
-        else:
-            lists[li] = [lists[li],'패스']
-            #list_test csv파일로 저장
-            with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
-                write = csv.writer(f)
-                write.writerows([lists])
+            print(lists[li][0])
+            check = EA_cou_item_ck(lists[li][0])
+
+            if check == '동서가구':
+                lists[li] = [lists[li][0],'스캔필요']
+                with open('cou_list.csv', 'w', newline='',encoding='utf-8-sig') as f:
+                    write = csv.writer(f)
+                    write.writerows([lists])
+                print('스캔필요')
+            else:
+                lists[li] = [lists[li][0],'패스']
+                #list_test csv파일로 저장
+                with open('cou_list.csv', 'w', newline='',encoding='utf-8-sig') as f:
+                    write = csv.writer(f)
+                    write.writerows([lists])
+                print('패스')
