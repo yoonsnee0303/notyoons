@@ -41,18 +41,12 @@ if ex_ip != '183.100.232.2444':
     with open('cou_list.csv', 'r', newline='',encoding='utf-8-sig') as f:
         read = csv.reader(f)
         lists = list(read)
-        lists = lists[0]
-    print(lists[0].split(','))
-    time.sleep(1000)
-
-
 
     for i in range(len(lists)):
         if lists[i][-1].count('스캔필요') + lists[i][-1].count('패스') == 0:
             start_cnt = i
             break
-
-    time.sleep(1000)
+    print(start_cnt)
     
     import getpass
     path_input = getpass.getuser()
@@ -73,9 +67,19 @@ if ex_ip != '183.100.232.2444':
     import sys
     import unittest
 
+    brand_lists = ['coupang', 'sin','today']
 
+    # save in Firebase
+    # save in Firebase
+    # save in Firebase
+    def to_ascii(string):
+        return int(sum([ord(character) for character in string]) / len(brand_lists))
 
-
+    #make dicts
+    brand_dicts = {}
+    for brand in brand_lists:
+        ascii_code = to_ascii(brand)
+        brand_dicts[brand] = {ascii_code: []}
 
     #텍스트 내 '동서가구' 로고 포함 여부 확인
     #텍스트 내 '동서가구' 로고 포함 여부 확인
@@ -84,13 +88,29 @@ if ex_ip != '183.100.232.2444':
         if text.count("동서가구"):
             print(text)
             print("\n\n\n")
+            
             pyautogui.screenshot(f'{file_name}_text.jpg')
             image_file_path = f'./{file_name}_text.jpg'
-            bucket = storage.bucket()
-            blob = bucket.blob(f'{file_name}_text.jpg')
-            blob.upload_from_filename(image_file_path)
-            print(f'File {image_file_path} was uploaded to Firebase Storage.')
+            for brand in brand_lists:
+                if brand in file_name:
+                    #make bucket and get folder name for each brand
+                    bucket = storage.bucket()
+                    folder_name = str(list(brand_dicts[brand].keys())[0])
+                    folder_blob = bucket.blob(folder_name)
+
+                    #check specific folder name exist or not
+                    if not folder_blob.exists():
+                        print(f'Creating folder {folder_name}')
+                        folder_blob.upload_from_string('')
+
+                    # Upload a file to the folder
+                    blob = bucket.blob(f'{folder_name}/{image_file_path}')
+                    blob.upload_from_filename(image_file_path)
+                    print(f'File {file_name} uploaded to {folder_name}')
+                    break
+
             return '동서가구'
+    
         else:
             return
 
@@ -167,14 +187,6 @@ if ex_ip != '183.100.232.2444':
 
 
 
-
-
-
-
-
-
-
-
     #쿠팡 개별 상품 스캔
     #쿠팡 개별 상품 스캔
     #쿠팡 개별 상품 스캔
@@ -222,11 +234,13 @@ if ex_ip != '183.100.232.2444':
         time.sleep(3)
         code = driver.page_source
         soup = bs(code, 'html.parser')
+        
         import datetime
         now = datetime.datetime.now()
         now = now.strftime('%Y%m%d %H%M%S')
         
-        file_name = 'baspore'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','')
+        pro_num = lists[start_cnt][0].split('=')[1].split('&')[0]
+        file_name = 'coupang'+'_'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
 
 
         #text #text #text #text #text #text #text #text 
@@ -272,26 +286,35 @@ if ex_ip != '183.100.232.2444':
         ##
         ##
         check, hight = img_check(img_url)
-
-
-
-
         if check == '동서가구':
             pyautogui.screenshot(f'{file_name}_img.jpg')
             print(f'{file_name}_img.jpg')
 
-            image_file_path = f'{file_name}_img.jpg'
-            bucket = storage.bucket()
-            blob = bucket.blob(image_file_path) # 저장된 파일의 이름
-            blob.upload_from_filename(image_file_path) # 등록할 파일의 이름
-            print(f'File {image_file_path} was uploaded to Firebase Storage.')
+            image_file_path = f'{file_name}_text.jpg'
+            for brand in brand_lists:
+
+                if brand in file_name:
+
+                    #make bucket and get folder name for each brand
+                    bucket = storage.bucket()
+                    folder_name = str(list(brand_dicts[brand].keys())[0])
+                    folder_blob = bucket.blob(folder_name)
+
+                    #check specific folder name exist or not
+                    if not folder_blob.exists():
+                        print(f'Creating folder {folder_name}')
+                        folder_blob.upload_from_string('')
+
+                    # Upload a file to the folder
+                    blob = bucket.blob(f'{folder_name}/{image_file_path}')
+                    blob.upload_from_filename(image_file_path)
+                    print(f'File {file_name} uploaded to {folder_name}')
             return '동서가구'
 
         #05 상세페이지
         detail = soup.find('div', id="productDetail")
         imgs = detail.find_all('img')
         print(imgs)
-        print('ck1')
         for img in imgs:
             try:
                 src = img['src']
@@ -303,7 +326,6 @@ if ex_ip != '183.100.232.2444':
                 check,hight = img_check(img_url)
                 if check == '동서가구':
                     count = 0
-
                     while count < len(lists) : #len(lists)
                         img_element = driver.find_element(By.XPATH, f"//img[@src='{img_url}']")
                         print('find img_element')
@@ -313,17 +335,36 @@ if ex_ip != '183.100.232.2444':
                         script = "document.querySelector('.product-detail-seemore-btn').click();"
                         time.sleep(3)
                         driver.execute_script(script)
-                        driver.execute_script(f"window.scrollBy(0, {location['y']} + {int(hight)*0.5});")
+                        print(hight)
+                        if hight < 50 :
+                            driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*1.7});")
+                        elif 50 < hight < 80:
+                            print('here')
+                            driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)});")
+                        else:
+                            driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*0.5});")
                         time.sleep(2)
+                        pyautogui.screenshot(f'{file_name}_text.jpg')
+                        image_file_path = f'{file_name}_text.jpg'
+                        for brand in brand_lists:
 
-                        pyautogui.screenshot(f'{file_name}_img.jpg')
-                        print(f'{file_name}_img.jpg')
+                            if brand in file_name:
 
-                        image_file_path = f'{file_name}_img.jpg'
-                        bucket = storage.bucket()
-                        blob = bucket.blob(image_file_path) # 저장된 파일의 이름
-                        blob.upload_from_filename(image_file_path) # 등록할 파일의 이름
-                        print(f'File {image_file_path} was uploaded to Firebase Storage.')
+                                #make bucket and get folder name for each brand
+                                bucket = storage.bucket()
+                                folder_name = str(list(brand_dicts[brand].keys())[0])
+                                folder_blob = bucket.blob(folder_name)
+
+                                #check specific folder name exist or not
+                                if not folder_blob.exists():
+                                    print(f'Creating folder {folder_name}')
+                                    folder_blob.upload_from_string('')
+
+                                # Upload a file to the folder
+                                blob = bucket.blob(f'{folder_name}/{image_file_path}')
+                                blob.upload_from_filename(image_file_path)
+                                print(f'File {file_name} uploaded to {folder_name}')
+                                break
                         count +=1
                         break
                     break
@@ -345,7 +386,6 @@ if ex_ip != '183.100.232.2444':
     print('시작', datetime.datetime.now())
 
     for li in range(start_cnt, len(lists)):
-            print(lists[li][0])
             check = EA_cou_item_ck(lists[li][0])
 
             if check == '동서가구':
