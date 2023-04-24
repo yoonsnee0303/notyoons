@@ -55,7 +55,7 @@ if ex_ip != '183.100.232.2444':
 
     import pytesseract
     import cv2
-    from matplotlib import pyplot as plt
+    # from matplotlib import pyplot as plt
     import urllib.request
 
 
@@ -124,7 +124,12 @@ if ex_ip != '183.100.232.2444':
             pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
             urllib.request.urlretrieve(url, "test1.jpg")
             image = cv2.imread("test1.jpg", cv2.IMREAD_GRAYSCALE) # 흑백 이미지로 로드
+            if image == "None":
+                print('nono')
+                pass
+
             img_width = int(image.shape[1])
+
             img_hight = int(image.shape[0])
             print(img_width, img_hight)
 
@@ -132,6 +137,7 @@ if ex_ip != '183.100.232.2444':
             width_unit = int(round(img_width/100))
             hight_unit = int(round(img_hight/100))
             print(width_unit)
+
             # plt.imshow(image, cmap="gray"), plt.axis("off")
             # plt.show()
 
@@ -345,8 +351,6 @@ if ex_ip != '183.100.232.2444':
         driver.quit()
         if check == '동서가구':
             return '동서가구'
-        else:
-            return
 
         #img #img #img #img #img #img #img #img #img #img 
 
@@ -360,6 +364,7 @@ if ex_ip != '183.100.232.2444':
                 write = csv.writer(f)
                 write.writerows([lists])
         else:
+            
             lists[li] = [lists[li],'패스']
             #list_test csv파일로 저장
             with open('o_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
