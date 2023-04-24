@@ -38,7 +38,6 @@ if ex_ip != '183.100.232.2444':
         read = csv.reader(f)
         lists = list(read)
     lists = lists[0]
-    print(lists[0])
     print(lists)
 
     for i in range(len(lists)):
@@ -54,7 +53,7 @@ if ex_ip != '183.100.232.2444':
 
     import pytesseract
     import cv2
-    from matplotlib import pyplot as plt
+    # from matplotlib import pyplot as plt
     import urllib.request
 
 
@@ -67,16 +66,23 @@ if ex_ip != '183.100.232.2444':
     from PIL import Image
     import sys
     import unittest
-    from selenium import webdriver
-    from selenium.webdriver.common.by import By
-
 
     import datetime
     now = datetime.datetime.now
 
+    brand_lists = ['coupang', 'sin','today']
 
+    # save in Firebase
+    # save in Firebase
+    # save in Firebase
+    def to_ascii(string):
+        return int(sum([ord(character) for character in string]) / len(brand_lists))
 
-
+    #make dicts
+    brand_dicts = {}
+    for brand in brand_lists:
+        ascii_code = to_ascii(brand)
+        brand_dicts[brand] = {ascii_code: []}
 
     #텍스트 내 '동서가구' 로고 포함 여부 확인
     #텍스트 내 '동서가구' 로고 포함 여부 확인
@@ -84,11 +90,24 @@ if ex_ip != '183.100.232.2444':
     def txt_check(file_name,text):
         if text.count("동서가구"):
             pyautogui.screenshot(f'{file_name}_text.jpg')
-            image_file_path = f'./{file_name}_text.jpg'
-            bucket = storage.bucket()
-            blob = bucket.blob(f'{file_name}_text.jpg')
-            blob.upload_from_filename(image_file_path)
-            print(f'File {image_file_path} was uploaded to Firebase Storage.')
+            image_file_path = f'{file_name}_text.jpg'
+            for brand in brand_lists:
+                if brand in file_name:
+                    #make bucket and get folder name for each brand
+                    bucket = storage.bucket()
+                    folder_name = str(list(brand_dicts[brand].keys())[0])
+                    folder_blob = bucket.blob(folder_name)
+
+                    #check specific folder name exist or not
+                    if not folder_blob.exists():
+                        print(f'Creating folder {folder_name}')
+                        folder_blob.upload_from_string('')
+
+                    # Upload a file to the folder
+                    blob = bucket.blob(f'{folder_name}/{image_file_path}')
+                    blob.upload_from_filename(image_file_path)
+                    print(f'File {file_name} uploaded to {folder_name}')
+                    break
             return '동서가구'
         else:
             return None
@@ -142,33 +161,22 @@ if ex_ip != '183.100.232.2444':
 
                     text = pytesseract.image_to_string(image_cropped, lang='kor').strip().replace(" ", "").replace("\n","")
                     print(text)
-
                     # plt.imshow(image_cropped, cmap="gray"), plt.axis("off")
                     # plt.show()
 
                     if now_hight > 30:
-                        return '이미지없음'
+                        return '이미지없음', hight
                     elif text.count('동서가구') + text.count('동셔가구') + text.count('써가구')!= 0:
                         #plt.show()
-                        return '동서가구'
+                        return '동서가구' , hight
             except:
                 pass
 
 
         image, img_width, img_hight, width_unit, hight_unit = 이미지확인(url)
-        check = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
-   
+        check, hight = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
 
-        return check
-
-
-
-
-
-
-
-
-
+        return check, hight
 
 
     #신세계 개별 상품 스캔
@@ -221,8 +229,10 @@ if ex_ip != '183.100.232.2444':
 
         now = datetime.datetime.now()
         now = now.strftime('%Y%m%d %H%M%S')
+
+        pro_num = url.split('=')[1]
         
-        file_name = now.split('.')[0].replace('-','').replace(' ','_').replace(':','')
+        file_name = 'sin' +'_' + now.split('.')[0].replace('-','').replace(' ','_').replace(':','') +'_'+ pro_num
 
         #text #text #text #text #text #text #text #text 
 
@@ -260,9 +270,31 @@ if ex_ip != '183.100.232.2444':
         ##
         ##
         ##
-        check = img_check(img_url)
+        check,hight = img_check(img_url)
         if check == '동서가구':
-            return '동서가구'
+            pyautogui.screenshot(f'{file_name}_img.jpg')
+            print(f'{file_name}_img.jpg')
+
+            image_file_path = f'{file_name}_text.jpg'
+            for brand in brand_lists:
+
+                if brand in file_name:
+
+                    #make bucket and get folder name for each brand
+                    bucket = storage.bucket()
+                    folder_name = str(list(brand_dicts[brand].keys())[0])
+                    folder_blob = bucket.blob(folder_name)
+
+                    #check specific folder name exist or not
+                    if not folder_blob.exists():
+                        print(f'Creating folder {folder_name}')
+                        folder_blob.upload_from_string('')
+
+                    # Upload a file to the folder
+                    blob = bucket.blob(f'{folder_name}/{image_file_path}')
+                    blob.upload_from_filename(image_file_path)
+                    print(f'File {file_name} uploaded to {folder_name}')
+            return '동서가구',hight
 
         #05 상세페이지
 
@@ -284,43 +316,42 @@ if ex_ip != '183.100.232.2444':
                 ##
                 ##
                 ##
-                check = img_check(link)
-                print(check)
+                check, hight = img_check(link)
                 if check == '동서가구': 
                     count = 0  
+
                     while count < len(links): #lists
-                        # try:
-                            img_element = driver.find_element(By.XPATH, f"//img[@src='{link}']")
-                            print(img_element)
-                            print('find img_element')
+                        img_element = driver.find_element(By.XPATH, f"//img[@src='{img_url}']")
+                        print('find img_element')
+                        location = img_element.location
+                        print(location)
 
-                            location = img_element.location
-                            print(location)
+                        script = "document.querySelector('.product-detail-seemore-btn').click();"
+                        time.sleep(3)
+                        driver.execute_script(script)
+                        print(hight)
+                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*0.5});")
+                        time.sleep(2)
+                        pyautogui.screenshot(f'{file_name}_text.jpg')
+                        image_file_path = f'{file_name}_text.jpg'
+                        for brand in brand_lists:
+                            if brand in file_name:
+                                #make bucket and get folder name for each brand
+                                bucket = storage.bucket()
+                                folder_name = str(list(brand_dicts[brand].keys())[0])
+                                folder_blob = bucket.blob(folder_name)
 
-                            driver.switch_to.default_content()
+                                #check specific folder name exist or not
+                                if not folder_blob.exists():
+                                    print(f'Creating folder {folder_name}')
+                                    folder_blob.upload_from_string('')
 
-                            script = "document.getElementsByClassName('btn_collapse ctrl_collapse')[0].click();"
-                            driver.execute_script(script)
-                            print('done')
-
-                            driver.execute_script(f"window.scrollBy(0, {str(location['y']+2560)});")
-                            time.sleep(3)
-                            pyautogui.screenshot(f'{file_name}_img.jpg')
-                            print('스크린샷 완료')
-                            print(f'{file_name}_img.jpg')
-
-                            image_file_path = f'{file_name}_img.jpg'
-                            bucket = storage.bucket()
-                            blob = bucket.blob(image_file_path) # 저장된 파일의 이름
-                            blob.upload_from_filename(image_file_path) # 등록할 파일의 이름
-                            print(blob.public_url)
-                            print(f'File {image_file_path} was uploaded to Firebase Storage.')
-                            count +=1
-                            print(count,'번째')
-
-                        # except:
-                        #     pass
-                            break 
+                                # Upload a file to the folder
+                                blob = bucket.blob(f'{folder_name}/{image_file_path}')
+                                blob.upload_from_filename(image_file_path)
+                                print(f'File {file_name} uploaded to {folder_name}')
+                                break
+                        # break
                     break
             
             except:
