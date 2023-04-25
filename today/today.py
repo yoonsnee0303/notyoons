@@ -124,9 +124,9 @@ if ex_ip != '183.100.232.2444':
             pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
             urllib.request.urlretrieve(url, "test1.jpg")
             image = cv2.imread("test1.jpg", cv2.IMREAD_GRAYSCALE) # 흑백 이미지로 로드
-            if image == "None":
-                print('nono')
-                pass
+            # if image == "None":
+            #     print('nono')
+            #     pass
 
             img_width = int(image.shape[1])
 
@@ -159,7 +159,8 @@ if ex_ip != '183.100.232.2444':
                 for hight in range(width_unit, img_hight, hight_unit):
                     now_hight = (hight/img_hight)*50
                     print(hight)
-
+                    if hight == 'None':
+                        print('hight=None')
                     if img_width != 640:
                         if hight >= 150:
                             image_cropped = image[hight-150:hight, width:]
@@ -261,7 +262,7 @@ if ex_ip != '183.100.232.2444':
         pro_num = re.sub(r'[^0-9]', '', string)
 
 
-        file_name = 'today'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
+        file_name = 'today'+'_'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
 
 
 
@@ -296,7 +297,7 @@ if ex_ip != '183.100.232.2444':
         #05 상세페이지
         detail = soup.find('div', class_="production-selling-description__content")
         imgs = detail.find_all('img')
-
+        
         for img in imgs:
             try:
                 src = img['src']
@@ -306,21 +307,17 @@ if ex_ip != '183.100.232.2444':
                 ##
                 ##
                 check = img_check(img_url)
+                print(check)
                 if check == '동서가구':
                     count = 0
-
-                    while count < len(lists) : #len(lists)
+                    while count < len(lists) : 
                         img_element = driver.find_element(By.XPATH, f"//img[@src='{img_url}']")
                         print('find img_element')
                         location = img_element.location
                         print(location)
 
-                        script = "document.querySelector('.product-detail-seemore-btn').click();"
+                        driver.execute_script(f"window.scrollBy(0, {location['y']+550});")
                         time.sleep(3)
-                        driver.execute_script(script)
-                        driver.execute_script(f"window.scrollBy(0, {location['y']}")
-                        time.sleep(2)
-
                         pyautogui.screenshot(f'{file_name}_img.jpg')
                         print(f'{file_name}_img.jpg')
 
@@ -342,21 +339,17 @@ if ex_ip != '183.100.232.2444':
                                 blob = bucket.blob(f'{folder_name}/{image_file_path}')
                                 blob.upload_from_filename(image_file_path)
                                 print(f'File {file_name} uploaded to {folder_name}')
-                        count +=1
+                                break
                         break
                     break
             except:
                 pass
-
-        driver.quit()
-        if check == '동서가구':
-            return '동서가구'
-
+        return check       
         #img #img #img #img #img #img #img #img #img #img 
-
 
     for li in range(start_cnt, len(lists)):
         check = EA_cou_item_ck(lists[li])
+        print(check)
         if check == '동서가구':
             lists[li] = [lists[li],'스캔필요']
             #list_test csv파일로 저장
