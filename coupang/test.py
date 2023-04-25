@@ -1,21 +1,19 @@
 #테스트 url - 쿠팡-바스포르 벤더-동서가구 검색
 
-
-# 서버에서 오류가 발생했습니다
+#https://store.coupang.com/vp/vendors/A00037308/products?vendorName=%28%EC%A3%BC%29%EB%B0%94%EC%8A%A4%ED%8F%AC%EB%A5%B4&productId=1668601&outboundShippingPlaceId=
 
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import storage
 
 # Firebase 서비스 계정의 키 파일 경로
-cred = credentials.Certificate('upload-img-5b02f-firebase-adminsdk-frojl-fe3e21064f.json')
+cred = credentials.Certificate('upload-img-5b02f-firebase-adminsdk-frojl-cdbc149b2d.json')
 
 # Firebase 프로젝트 ID
 project_id = 'upload-img-5b02f.appspot.com'
 
 # Firebase 초기화
 firebase_admin.initialize_app(cred, {'storageBucket': f'{project_id}'})
-
 
 import time
 import socket
@@ -28,6 +26,7 @@ print("내부 IP: ", in_ip)
 req = requests.get("http://ipconfig.kr")
 ex_ip = re.search(r'IP Address : (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', req.text)[1]
 print("외부 IP: ", ex_ip)
+# time.sleep(1000)
 
 
 start_cnt = 0
@@ -37,17 +36,19 @@ if ex_ip != '183.100.232.2444':
     #csv파일 list로 불러오기
     #csv파일 list로 불러오기
     #csv파일 list로 불러오기
-
-    with open('cou_list.csv', 'r', newline='',encoding='utf-8-sig') as f:
+    with open('auc_list.csv', 'r', newline='', encoding='utf-8-sig') as f:
         read = csv.reader(f)
         lists = list(read)
+    lists = lists[0]
 
     for i in range(len(lists)):
-        if lists[i][-1].count('스캔필요') + lists[i][-1].count('패스') == 0:
+
+        if lists[i].count('스캔필요') + lists[i].count('패스') == 0:
             start_cnt = i
             break
-    print(start_cnt)
-    
+
+    # print(start_cnt)
+
     import getpass
     path_input = getpass.getuser()
 
@@ -66,8 +67,7 @@ if ex_ip != '183.100.232.2444':
     from PIL import Image
     import sys
     import unittest
-
-    brand_lists = ['coupang', 'sin','today']
+    brand_lists = ['coupang', 'sin','today', 'auc']
 
     # save in Firebase
     # save in Firebase
@@ -81,18 +81,19 @@ if ex_ip != '183.100.232.2444':
         ascii_code = to_ascii(brand)
         brand_dicts[brand] = {ascii_code: []}
 
-    #텍스트 내 '동서가구' 로고 포함 여부 확인
-    #텍스트 내 '동서가구' 로고 포함 여부 확인
-    #텍스트 내 '동서가구' 로고 포함 여부 확인
+
+    #이미지 내 '동서가구' 로고 포함 여부 확인
+    #이미지 내 '동서가구' 로고 포함 여부 확인
+    #이미지 내 '동서가구' 로고 포함 여부 확인
     def txt_check(file_name,text):
         if text.count("동서가구"):
             print(text)
             print("\n\n\n")
-            
             pyautogui.screenshot(f'{file_name}_text.jpg')
-            image_file_path = f'./{file_name}_text.jpg'
+            image_file_path = f'{file_name}_text.jpg'
             for brand in brand_lists:
                 if brand in file_name:
+
                     #make bucket and get folder name for each brand
                     bucket = storage.bucket()
                     folder_name = str(list(brand_dicts[brand].keys())[0])
@@ -108,9 +109,7 @@ if ex_ip != '183.100.232.2444':
                     blob.upload_from_filename(image_file_path)
                     print(f'File {file_name} uploaded to {folder_name}')
                     break
-
             return '동서가구'
-    
         else:
             return
 
@@ -146,12 +145,13 @@ if ex_ip != '183.100.232.2444':
                 print('img_hight:', img_hight)
                 print('width_unit:', width_unit)
                 print('hight_unit:', hight_unit)
+                # time.sleep(1000)
 
                 for hight in range(width_unit, img_hight, hight_unit):
                     now_hight = (hight/img_hight)*50
                     print(hight)
 
-                    if img_width != 492:
+                    if img_width != 640:
                         if hight >= 150:
                             image_cropped = image[hight-150:hight, width:]
                         else:
@@ -164,32 +164,38 @@ if ex_ip != '183.100.232.2444':
 
                     text = pytesseract.image_to_string(image_cropped, lang='kor').strip().replace(" ", "").replace("\n","")
                     print(text)
+
                     # plt.imshow(image_cropped, cmap="gray"), plt.axis("off")
                     # plt.show()
 
                     if now_hight > 30:
-                        return '이미지없음', hight
-                    elif text.count('동서가구') + text.count('동셔가구') + text.count('써가구') + text.count('등셔기포') + text.count('등서가로') + text.count('등서기로') != 0:
-                        # plt.show()
-                        print(hight,'///',img_hight)
-                        return '동서가구', hight
+                        return '이미지없음'
+                    elif text.count('동서가구') + text.count('동셔가구') + text.count('써가구') != 0:
+                        #plt.show()
+                        return '동서가구'
             except:
                 pass
 
 
         image, img_width, img_hight, width_unit, hight_unit = 이미지확인(url)
-        print('test')
-        check, hight = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
-        print('hre')
+        check = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
+        print(check)
 
-        return check, hight
-    
+        return check
 
 
 
-    #쿠팡 개별 상품 스캔
-    #쿠팡 개별 상품 스캔
-    #쿠팡 개별 상품 스캔
+
+
+
+
+
+
+
+
+    #오늘의 집 개별 상품 스캔
+    #오늘의 집 개별 상품 스캔
+    #오늘의 집 개별 상품 스캔
     def EA_cou_item_ck(url):
 
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -234,19 +240,23 @@ if ex_ip != '183.100.232.2444':
         time.sleep(3)
         code = driver.page_source
         soup = bs(code, 'html.parser')
-        
+
+        # setting file_name
+        # 시간 및 날짜
         import datetime
         now = datetime.datetime.now()
         now = now.strftime('%Y%m%d %H%M%S')
         
-        pro_num = lists[start_cnt][0].split('=')[1].split('&')[0]
-        file_name = 'coupang'+'_'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
+        # 상품 번호
+        pro_num = url.split('=')[1]
+        file_name = 'auc'+'_'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
+
 
 
         #text #text #text #text #text #text #text #text 
-
-        #01 상단
-        main = soup.find('div', class_='prod-atf-main').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
+        # #01 상단
+        main = soup.find('div', 'item-topinfo').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
+        print(main)
         check = txt_check(file_name,main)
         if check == '동서가구':
             return '동서가구'
@@ -254,78 +264,39 @@ if ex_ip != '183.100.232.2444':
             print("품절 상품 / 패스")
             return
 
-        #02 필수 표기정보
-        driver.find_element(By.ID, 'itemBrief').click()
-        brief = soup.find('div', id="itemBrief").text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
-        check = txt_check(file_name,brief)
-        if check == '동서가구':
-            return '동서가구'
-
-        #03 배송/교환/반품 안내
-        driver.find_element(By.NAME, 'etc').click()
-        time.sleep(1)
-        code = driver.page_source
-        soup = bs(code, 'html.parser')
-        etc = soup.find('li', class_='product-etc tab-contents__content').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
-        check = txt_check(file_name,etc)
-        if check == '동서가구':
-            return '동서가구'
-
         #text #text #text #text #text #text #text #text 
 
 
 
         #img #img #img #img #img #img #img #img #img #img 
 
-        #04 이미지
-        actions = ActionChains(driver)
-        actions.send_keys(Keys.HOME).perform()
-        img_url = 'https:' + soup.find('img', class_="prod-image__detail")['src']
+        #04 메인 이미지
+        img_url = soup.find('img', class_="production-selling-cover-image__entry__image")['src']
         print(img_url)
         ##
         ##
         ##
-        check, hight = img_check(img_url)
+        check = img_check(img_url)
         if check == '동서가구':
-            pyautogui.screenshot(f'{file_name}_img.jpg')
-            print(f'{file_name}_img.jpg')
-
-            image_file_path = f'{file_name}_text.jpg'
-            for brand in brand_lists:
-
-                if brand in file_name:
-
-                    #make bucket and get folder name for each brand
-                    bucket = storage.bucket()
-                    folder_name = str(list(brand_dicts[brand].keys())[0])
-                    folder_blob = bucket.blob(folder_name)
-
-                    #check specific folder name exist or not
-                    if not folder_blob.exists():
-                        print(f'Creating folder {folder_name}')
-                        folder_blob.upload_from_string('')
-
-                    # Upload a file to the folder
-                    blob = bucket.blob(f'{folder_name}/{image_file_path}')
-                    blob.upload_from_filename(image_file_path)
-                    print(f'File {file_name} uploaded to {folder_name}')
             return '동서가구'
 
+
         #05 상세페이지
-        detail = soup.find('div', id="productDetail")
+        detail = soup.find('div', class_="production-selling-description__content")
         imgs = detail.find_all('img')
-        print(imgs)
+
         for img in imgs:
             try:
                 src = img['src']
-
+                print(src)
                 img_url = src
                 ##
                 ##
                 ##
-                check,hight = img_check(img_url)
+                check = img_check(img_url)
                 if check == '동서가구':
                     count = 0
+
                     while count < len(lists) : #len(lists)
                         img_element = driver.find_element(By.XPATH, f"//img[@src='{img_url}']")
                         print('find img_element')
@@ -335,19 +306,14 @@ if ex_ip != '183.100.232.2444':
                         script = "document.querySelector('.product-detail-seemore-btn').click();"
                         time.sleep(3)
                         driver.execute_script(script)
-                        print(hight)
-                        if hight < 50 :
-                            driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*1.7});")
-                        elif 50 < hight < 80:
-                            print('here')
-                            driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)});")
-                        else:
-                            driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*0.5});")
+                        driver.execute_script(f"window.scrollBy(0, {location['y']}")
                         time.sleep(2)
-                        pyautogui.screenshot(f'{file_name}_text.jpg')
-                        image_file_path = f'{file_name}_text.jpg'
-                        for brand in brand_lists:
 
+                        pyautogui.screenshot(f'{file_name}_img.jpg')
+                        print(f'{file_name}_img.jpg')
+
+                        image_file_path = f'{file_name}_img.jpg'
+                        for brand in brand_lists:
                             if brand in file_name:
 
                                 #make bucket and get folder name for each brand
@@ -364,40 +330,27 @@ if ex_ip != '183.100.232.2444':
                                 blob = bucket.blob(f'{folder_name}/{image_file_path}')
                                 blob.upload_from_filename(image_file_path)
                                 print(f'File {file_name} uploaded to {folder_name}')
-                                break
                         count +=1
                         break
                     break
-                # break
-            
             except:
                 pass
-        
-        # driver.quit()
-        if check == '동서가구':
-            return '동서가구'
-        else:
-            return
+        return check
 
         #img #img #img #img #img #img #img #img #img #img 
 
 
-    import datetime
-    print('시작', datetime.datetime.now())
-
     for li in range(start_cnt, len(lists)):
-            check = EA_cou_item_ck(lists[li][0])
-
-            if check == '동서가구':
-                lists[li] = [lists[li][0],'스캔필요']
-                with open('cou_list.csv', 'w', newline='',encoding='utf-8-sig') as f:
-                    write = csv.writer(f)
-                    write.writerows([lists])
-                print('스캔필요')
-            else:
-                lists[li] = [lists[li][0],'패스']
-                #list_test csv파일로 저장
-                with open('cou_list.csv', 'w', newline='',encoding='utf-8-sig') as f:
-                    write = csv.writer(f)
-                    write.writerows([lists])
-                print('패스')
+        check = EA_cou_item_ck(lists[li])
+        if check == '동서가구':
+            lists[li] = [lists[li],'스캔필요']
+            #list_test csv파일로 저장
+            with open('o_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                write = csv.writer(f)
+                write.writerows([lists])
+        else:
+            lists[li] = [lists[li],'패스']
+            #list_test csv파일로 저장
+            with open('o_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                write = csv.writer(f)
+                write.writerows([lists])
