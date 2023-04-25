@@ -7,7 +7,7 @@ from firebase_admin import credentials
 from firebase_admin import storage
 
 # Firebase 서비스 계정의 키 파일 경로
-cred = credentials.Certificate('upload-img-5b02f-firebase-adminsdk-frojl-fe3e21064f.json')
+cred = credentials.Certificate('upload-img-5b02f-firebase-adminsdk-frojl-cdbc149b2d.json')
 
 # Firebase 프로젝트 ID
 project_id = 'upload-img-5b02f.appspot.com'
@@ -90,7 +90,7 @@ if ex_ip != '183.100.232.2444':
             print(text)
             print("\n\n\n")
             pyautogui.screenshot(f'{file_name}_text.jpg')
-            image_file_path = f'./{file_name}_text.jpg'
+            image_file_path = f'{file_name}_text.jpg'
             for brand in brand_lists:
                 if brand in file_name:
 
@@ -248,17 +248,14 @@ if ex_ip != '183.100.232.2444':
         now = now.strftime('%Y%m%d %H%M%S')
         
         # 상품 번호
-        string = url.split('?')[0]
-        pro_num = re.sub(r'[^0-9]', '', string)
-
-
-        file_name = 'auc'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
+        pro_num = url.split('=')[1]
+        file_name = 'auc'+'_'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
 
 
 
         #text #text #text #text #text #text #text #text 
         # #01 상단
-        main = soup.find('div', 'production-selling-overview container').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
+        main = soup.find('div', 'item-topinfo').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
         print(main)
         check = txt_check(file_name,main)
         if check == '동서가구':
@@ -338,12 +335,7 @@ if ex_ip != '183.100.232.2444':
                     break
             except:
                 pass
-
-        driver.quit()
-        if check == '동서가구':
-            return '동서가구'
-        else:
-            return
+        return check
 
         #img #img #img #img #img #img #img #img #img #img 
 
