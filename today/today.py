@@ -92,7 +92,7 @@ if ex_ip != '183.100.232.2444':
             print(text)
             print("\n\n\n")
             pyautogui.screenshot(f'{file_name}_text.jpg')
-            image_file_path = f'./{file_name}_text.jpg'
+            image_file_path = f'{file_name}_text.jpg'
             for brand in brand_lists:
 
                 if brand in file_name:
@@ -111,6 +111,12 @@ if ex_ip != '183.100.232.2444':
                     blob = bucket.blob(f'{folder_name}/{image_file_path}')
                     blob.upload_from_filename(image_file_path)
                     print(f'File {file_name} uploaded to {folder_name}')
+
+                    if os.path.exists('./'+file_name):
+                        os.remove('./'+file_name)
+                        print(f"{file_name}가 삭제되었습니다.")
+                    else:
+                        print(f"{file_name}가 존재하지 않습니다.")
                     break
             return '동서가구'
         else:
@@ -124,19 +130,30 @@ if ex_ip != '183.100.232.2444':
             pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
             urllib.request.urlretrieve(url, "test1.jpg")
             image = cv2.imread("test1.jpg", cv2.IMREAD_GRAYSCALE) # 흑백 이미지로 로드
-            # if image == "None":
-            #     print('nono')
-            #     pass
-
+            try:
+                if image == None:
+                    return 0,0,0,0,0
+            except:
+                pass
             img_width = int(image.shape[1])
-
             img_hight = int(image.shape[0])
-            print(img_width, img_hight)
 
-            print(img_width/100)
             width_unit = int(round(img_width/100))
             hight_unit = int(round(img_hight/100))
-            print(width_unit)
+
+            print(hight_unit)
+
+            if hight_unit == 0:
+                urllib.request.urlretrieve(url, "test1.jpg")
+                image = cv2.imread("test1.jpg", cv2.IMREAD_GRAYSCALE) # 흑백 이미지로 로드
+
+                img_width = int(image.shape[1])
+
+                img_hight = int(image.shape[0])
+
+                width_unit = int(round(img_width/100))
+                hight_unit = int(round(img_hight/100))
+                print('reload image')
 
             # plt.imshow(image, cmap="gray"), plt.axis("off")
             # plt.show()
@@ -148,19 +165,24 @@ if ex_ip != '183.100.232.2444':
 
         def 상단글자(image, width_unit, hight_unit, img_width, img_hight):
             try:
+                if image == 0:
+                    return '이미지없음'
+            except:
+                pass
+            
+            try:
                 width = 0
 
                 print('img_width:', img_width)
                 print('img_hight:', img_hight)
                 print('width_unit:', width_unit)
                 print('hight_unit:', hight_unit)
-                # time.sleep(1000)
 
                 for hight in range(width_unit, img_hight, hight_unit):
                     now_hight = (hight/img_hight)*50
                     print(hight)
-                    if hight == 'None':
-                        print('hight=None')
+
+                        
                     if img_width != 640:
                         if hight >= 150:
                             image_cropped = image[hight-150:hight, width:]
@@ -185,7 +207,7 @@ if ex_ip != '183.100.232.2444':
                         return '동서가구'
             except:
                 pass
-
+        
 
         image, img_width, img_hight, width_unit, hight_unit = 이미지확인(url)
         check = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
@@ -339,6 +361,12 @@ if ex_ip != '183.100.232.2444':
                                 blob = bucket.blob(f'{folder_name}/{image_file_path}')
                                 blob.upload_from_filename(image_file_path)
                                 print(f'File {file_name} uploaded to {folder_name}')
+
+                                if os.path.exists('./'+file_name):
+                                    os.remove('./'+file_name)
+                                    print(f"{file_name}가 삭제되었습니다.")
+                                else:
+                                    print(f"{file_name}가 존재하지 않습니다.")
                                 break
                         break
                     break
