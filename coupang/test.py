@@ -290,10 +290,10 @@ if ex_ip != '183.100.232.2444':
         ##
         check, hight = img_check(img_url)
         if check == '동서가구':
-            pyautogui.screenshot(f'{file_name}_img.jpg')
-            print(f'{file_name}_img.jpg')
+            pyautogui.screenshot(f'{file_name}.jpg')
+            print(f'{file_name}.jpg')
 
-            image_file_path = f'{file_name}_text.jpg'
+            image_file_path = f'{file_name}.jpg'
             for brand in brand_lists:
 
                 if brand in file_name:
