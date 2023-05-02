@@ -37,8 +37,6 @@ if ex_ip != '183.100.232.2444':
     #csv파일 list로 불러오기
     #csv파일 list로 불러오기
     with open('gm_list.csv', 'r', newline='', encoding='utf-8-sig') as f:
-        
-        
         read = csv.reader(f)
         lists = list(read)
     lists = lists[0]
@@ -273,7 +271,8 @@ if ex_ip != '183.100.232.2444':
         #img #img #img #img #img #img #img #img #img #img 
 
         #04 메인 이미지
-        img_url = soup.find('img', class_="production-selling-cover-image__entry__image")['src']
+        img_url = soup.find('div', class_="box__viewer-container")
+        img_url = img_url.find('img')['src'] #production-selling-cover-image__entry__image
         print(img_url)
         ##
         ##
@@ -284,8 +283,14 @@ if ex_ip != '183.100.232.2444':
 
 
         #05 상세페이지
-        detail = soup.find('div', class_="production-selling-description__content")
-        imgs = detail.find_all('img')
+        detail = soup.find('div', id="skip-item-detail") # production-selling-description__content
+        iframes = driver.find_element(By.XPATH,"//iframe[@id='detail1']")
+        driver.switch_to.frame(iframes)
+        time.sleep(2)
+        iframe_html = driver.page_source
+        iframe_html = bs(iframe_html,'html.parser')
+        imgs = iframe_html.find_all('img')
+
 
         for img in imgs:
             try:
