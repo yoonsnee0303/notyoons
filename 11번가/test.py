@@ -7,7 +7,7 @@ from firebase_admin import credentials
 from firebase_admin import storage
 
 # Firebase 서비스 계정의 키 파일 경로
-cred = credentials.Certificate('upload-img-5b02f-firebase-adminsdk-frojl-cdbc149b2d.json')
+cred = credentials.Certificate('upload-img-5b02f-firebase-adminsdk-frojl-fe3e21064f.json')
 
 # Firebase 프로젝트 ID
 project_id = 'upload-img-5b02f.appspot.com'
@@ -42,7 +42,6 @@ if ex_ip != '183.100.232.2444':
     lists = lists[0]
 
     for i in range(len(lists)):
-
         if lists[i].count('스캔필요') + lists[i].count('패스') == 0:
             start_cnt = i
             break
@@ -112,7 +111,8 @@ if ex_ip != '183.100.232.2444':
                     break
             return '동서가구',file_name
         else:
-            return 
+            print('here')
+            return None,None
 
     #이미지 내 '동서가구' 로고 포함 여부 확인
     #이미지 내 '동서가구' 로고 포함 여부 확인
@@ -250,14 +250,29 @@ if ex_ip != '183.100.232.2444':
         now = now.strftime('%Y%m%d %H%M%S')
         
         # 상품 번호
-        pro_num = url.split('=')[1]
-        file_name = 'auc'+'_'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
-
+        pro_num = url.split('/')[4].split('?')[0]
+        file_name = '11'+'_'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
 
 
         #text #text #text #text #text #text #text #text 
         # #01 상단
-        main = soup.find('div', 'prdc_wrap prdc_wrap_style2').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
+        main = soup.find('div', 'l_product_summary').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
+        print(main)
+        check,file_name = txt_check(file_name,main)
+        if check == '동서가구':
+            return '동서가구',file_name
+        elif main.count('현재판매중인상품이아닙니다'):
+            print("품절 상품 / 패스")
+            return 
+        else:
+            pass
+        
+        # #01 하단
+        element = driver.find_element(By.ID,'provisionNotice')
+        driver.execute_script("arguments[0].scrollIntoView();", element)
+        driver.execute_script("window.scrollBy(0, -30);")
+        time.sleep(2)
+        main = element.text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
         print(main)
         check,file_name = txt_check(file_name,main)
         if check == '동서가구':
@@ -265,7 +280,6 @@ if ex_ip != '183.100.232.2444':
         elif main.count('현재판매중인상품이아닙니다'):
             print("품절 상품 / 패스")
             return
-
         #text #text #text #text #text #text #text #text 
 
 
@@ -274,30 +288,29 @@ if ex_ip != '183.100.232.2444':
 
         #04 메인 이미지
         try:
-            wait = WebDriverWait(driver, 10)
-            button = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "button__detail-more.js-toggle-button")))
-            button.click()
+            element = driver.find_element(By.ID,'productImg')
+            driver.execute_script("window.scrollTo(0, 0);")
         except:
             pass
-        img_url = soup.find('div', class_="box__viewer-container") 
-        img_url = 'https:' + img_url.find('img')['src']
+        img_url = soup.find('div', id="productImg") 
+        img_url = img_url.find('img')['src']
         ##
         ##
         ##
         check = img_check(img_url)
         if check == '동서가구':
             return '동서가구'
+        
 
 
         #05 상세페이지
 
-        iframes = driver.find_element(By.ID,'hIfrmExplainView')
+        iframes = driver.find_element(By.ID,'prdDescIfrm')
         driver.switch_to.frame(iframes)
         time.sleep(2)
         iframe_html = driver.page_source
         iframe_html = bs(iframe_html,'html.parser')
         imgs = iframe_html.find_all('img')
-
         links = []
         for img in imgs:
             links.append(img["src"])
@@ -368,12 +381,12 @@ if ex_ip != '183.100.232.2444':
         if check == '동서가구':
             lists[li] = [lists[li],'스캔필요']
             #list_test csv파일로 저장
-            with open('auc_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+            with open('11_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                 write = csv.writer(f)
                 write.writerows([lists])
         else:
             lists[li] = [lists[li],'패스']
             #list_test csv파일로 저장
-            with open('auc_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+            with open('11_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                 write = csv.writer(f)
                 write.writerows([lists])
