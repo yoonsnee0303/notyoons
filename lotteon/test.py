@@ -18,6 +18,8 @@ import time
 import socket
 import re
 import requests
+from datetime import datetime
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect(("pwnbit.kr", 443))
 in_ip = sock.getsockname()[0]
@@ -123,6 +125,7 @@ if ex_ip != '183.100.232.2444':
         def 이미지확인(url):
             pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
             urllib.request.urlretrieve(url, "test1.jpg")
+            
             image = cv2.imread("test1.jpg", cv2.IMREAD_GRAYSCALE) # 흑백 이미지로 로드
             img_width = int(image.shape[1])
             img_hight = int(image.shape[0])
@@ -268,8 +271,7 @@ if ex_ip != '183.100.232.2444':
 
         # setting file_name
         # 시간 및 날짜
-        import datetime
-        now = datetime.datetime.now()
+        now = datetime.now()
         now = now.strftime('%Y%m%d %H%M%S')
         
         # 상품 번호
@@ -426,12 +428,11 @@ if ex_ip != '183.100.232.2444':
             return
 
         #img #img #img #img #img #img #img #img #img #img 
-    from datetime import datetime
-    start = datetime.datetime.now()
+    start = datetime.now()
     print('시작', start)
     for li in range(start_cnt, len(lists)):
         check = EA_cou_item_ck(lists[li])
-        end = datetime.datetime.now()
+        end = datetime.now()
         print('종료', end)
         print('총 걸린 시간', end - start)
         if check == '동서가구':
