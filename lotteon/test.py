@@ -18,7 +18,6 @@ import time
 import socket
 import re
 import requests
-from datetime import datetime
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect(("pwnbit.kr", 443))
@@ -70,14 +69,24 @@ if ex_ip != '183.100.232.2444':
     from PIL import Image
     import sys
     import unittest
+    import datetime
 
-    brand_lists = ['coupang', 'sin','today', 'gm','lotte']
+    brand_lists = ['11','lotte','sin','naver','today','gmarket','auction','interpark','coupang']
 
     # save in Firebase
     # save in Firebase
     # save in Firebase
     def to_ascii(string):
         return int(sum([ord(character) for character in string]) / len(brand_lists))
+
+    def get_week_of_month():
+        today = datetime.date.today()
+        first_day_of_month = datetime.date(today.year, today.month, 1)
+        week_number = (today - first_day_of_month).days // 7 + 1
+        week_syntax = str(today.month) + '월' + str(week_number) + '주차'
+    
+        return week_syntax
+
 
     #make dicts
     brand_dicts = {}
@@ -101,7 +110,7 @@ if ex_ip != '183.100.232.2444':
 
                     #make bucket and get folder name for each brand
                     bucket = storage.bucket()
-                    folder_name = str(list(brand_dicts[brand].keys())[0])
+                    folder_name = get_week_of_month()
                     folder_blob = bucket.blob(folder_name)
 
                     #check specific folder name exist or not
@@ -113,6 +122,11 @@ if ex_ip != '183.100.232.2444':
                     blob = bucket.blob(f'{folder_name}/{image_file_path}')
                     blob.upload_from_filename(image_file_path)
                     print(f'File {file_name} uploaded to {folder_name}')
+                    if os.path.exists('./'+file_name):
+                        os.remove('./'+file_name)
+                        print(f"{file_name}가 삭제되었습니다.")
+                    else:
+                        print(f"{file_name}가 존재하지 않습니다.")
                     break
             return '동서가구'
         else:
@@ -125,21 +139,22 @@ if ex_ip != '183.100.232.2444':
         def 이미지확인(url):
             pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
             urllib.request.urlretrieve(url, "test1.jpg")
-            
-            image = cv2.imread("test1.jpg", cv2.IMREAD_GRAYSCALE) # 흑백 이미지로 로드
-            img_width = int(image.shape[1])
-            img_hight = int(image.shape[0])
-            print(img_width, img_hight)
+            try:
+                image = cv2.imread("test1.jpg", cv2.IMREAD_GRAYSCALE) # 흑백 이미지로 로드
+                img_width = int(image.shape[1])
+                img_hight = int(image.shape[0])
+                print(img_width, img_hight)
 
-            print(img_width/100)
-            width_unit = int(round(img_width/100))
-            hight_unit = int(round(img_hight/100))
-            print(width_unit)
-            # plt.imshow(image, cmap="gray"), plt.axis("off")
-            # plt.show()
-
-
-            return image, img_width, img_hight, width_unit, hight_unit
+                print(img_width/100)
+                width_unit = int(round(img_width/100))
+                hight_unit = int(round(img_hight/100))
+                print(width_unit)
+                # plt.imshow(image, cmap="gray"), plt.axis("off")
+                # plt.show()    
+                return image, img_width, img_hight, width_unit, hight_unit
+            except:
+                pass
+                print('shape[0]')
 
 
 
@@ -271,7 +286,7 @@ if ex_ip != '183.100.232.2444':
 
         # setting file_name
         # 시간 및 날짜
-        now = datetime.now()
+        now = datetime.datetime.now()
         now = now.strftime('%Y%m%d %H%M%S')
         
         # 상품 번호
@@ -338,7 +353,7 @@ if ex_ip != '183.100.232.2444':
 
                         #make bucket and get folder name for each brand
                         bucket = storage.bucket()
-                        folder_name = str(list(brand_dicts[brand].keys())[0])
+                        folder_name = get_week_of_month()
                         folder_blob = bucket.blob(folder_name)
 
                         #check specific folder name exist or not
@@ -403,7 +418,7 @@ if ex_ip != '183.100.232.2444':
 
                                     #make bucket and get folder name for each brand
                                     bucket = storage.bucket()
-                                    folder_name = str(list(brand_dicts[brand].keys())[0])
+                                    folder_name = get_week_of_month()
                                     folder_blob = bucket.blob(folder_name)
 
                                     #check specific folder name exist or not
@@ -415,7 +430,12 @@ if ex_ip != '183.100.232.2444':
                                     blob = bucket.blob(f'{folder_name}/{image_file_path}')
                                     blob.upload_from_filename(image_file_path)
                                     print(f'File {file_name} uploaded to {folder_name}')
-                            count += 1
+                                    if os.path.exists('./'+file_name):
+                                        os.remove('./'+file_name)
+                                        print(f"{file_name}가 삭제되었습니다.")
+                                    else:
+                                        print(f"{file_name}가 존재하지 않습니다.")
+                            
                             break
                         break
             except:
@@ -428,11 +448,11 @@ if ex_ip != '183.100.232.2444':
             return
 
         #img #img #img #img #img #img #img #img #img #img 
-    start = datetime.now()
+    start = datetime.datetime.now()
     print('시작', start)
     for li in range(start_cnt, len(lists)):
         check = EA_cou_item_ck(lists[li])
-        end = datetime.now()
+        end = datetime.datetime.now()
         print('종료', end)
         print('총 걸린 시간', end - start)
         if check == '동서가구':
