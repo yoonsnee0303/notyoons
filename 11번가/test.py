@@ -66,13 +66,23 @@ if ex_ip != '183.100.232.2444':
     from PIL import Image
     import sys
     import unittest
-    brand_lists = ['coupang', 'sin','today', 'auc','11']
+    import datetime
+    brand_lists = ['11','lotte','sin','naver','today','gmarket','auction','interpark','coupang']
 
     # save in Firebase
     # save in Firebase
     # save in Firebase
     def to_ascii(string):
         return int(sum([ord(character) for character in string]) / len(brand_lists))
+
+    def get_week_of_month():
+        today = datetime.date.today()
+        first_day_of_month = datetime.date(today.year, today.month, 1)
+        week_number = (today - first_day_of_month).days // 7 + 1
+        week_syntax = str(today.month) + '월' + str(week_number) + '주차'
+    
+        return week_syntax
+
 
     #make dicts
     brand_dicts = {}
@@ -93,10 +103,9 @@ if ex_ip != '183.100.232.2444':
             image_file_path = f'{file_name}.jpg'
             for brand in brand_lists:
                 if brand in file_name:
-
                     #make bucket and get folder name for each brand
                     bucket = storage.bucket()
-                    folder_name = str(list(brand_dicts[brand].keys())[0])
+                    folder_name = get_week_of_month()
                     folder_blob = bucket.blob(folder_name)
 
                     #check specific folder name exist or not
@@ -109,10 +118,9 @@ if ex_ip != '183.100.232.2444':
                     blob.upload_from_filename(image_file_path)
                     print(f'File {file_name} uploaded to {folder_name}')
                     break
-            return '동서가구',file_name
+            return '동서가구'
         else:
-            print('here')
-            return None,None
+            return 
 
     #이미지 내 '동서가구' 로고 포함 여부 확인
     #이미지 내 '동서가구' 로고 포함 여부 확인
@@ -170,19 +178,19 @@ if ex_ip != '183.100.232.2444':
                     # plt.show()
 
                     if now_hight > 30:
-                        return '이미지없음'
+                        return '이미지없음',hight
                     elif text.count('동서가구') + text.count('동셔가구') + text.count('써가구') != 0:
                         #plt.show()
-                        return '동서가구'
+                        return '동서가구',hight
             except:
                 pass
 
 
         image, img_width, img_hight, width_unit, hight_unit = 이미지확인(url)
-        check = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
-        print(check)
+        check,hight = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
+        print(check,hight)
 
-        return check
+        return check,hight
 
 
 
@@ -256,25 +264,23 @@ if ex_ip != '183.100.232.2444':
 
         #text #text #text #text #text #text #text #text 
         # #01 상단
-        main = soup.find('div', 'l_product_summary').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
+        main = soup.find('div', 'l_product_side_info').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
         print(main)
-        check,file_name = txt_check(file_name,main)
+        check = txt_check(file_name,main)
         if check == '동서가구':
-            return '동서가구',file_name
+            return '동서가구'
         elif main.count('현재판매중인상품이아닙니다'):
             print("품절 상품 / 패스")
             return 
-        else:
-            pass
-        
+
         # #01 하단
         element = driver.find_element(By.ID,'provisionNotice')
         driver.execute_script("arguments[0].scrollIntoView();", element)
-        driver.execute_script("window.scrollBy(0, -30);")
+        driver.execute_script("window.scrollBy(0, -100);")
         time.sleep(2)
         main = element.text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
         print(main)
-        check,file_name = txt_check(file_name,main)
+        check = txt_check(file_name,main)
         if check == '동서가구':
             return '동서가구',file_name
         elif main.count('현재판매중인상품이아닙니다'):
@@ -287,13 +293,12 @@ if ex_ip != '183.100.232.2444':
         #img #img #img #img #img #img #img #img #img #img 
 
         #04 메인 이미지
-        try:
-            element = driver.find_element(By.ID,'productImg')
-            driver.execute_script("window.scrollTo(0, 0);")
-        except:
-            pass
+        # element = driver.find_element(By.ID,'productImg')
+        # driver.execute_script("window.scrollTo(0, 0);")
+
         img_url = soup.find('div', id="productImg") 
         img_url = img_url.find('img')['src']
+        print(img_url)
         ##
         ##
         ##
@@ -314,8 +319,6 @@ if ex_ip != '183.100.232.2444':
         links = []
         for img in imgs:
             links.append(img["src"])
-        print(links)
-        print(len(links))
         for link in links:
             try:
                 print(link)
@@ -337,14 +340,14 @@ if ex_ip != '183.100.232.2444':
                         driver.execute_script(script)
                         print(hight)
                         driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*0.5});")
-                        time.sleep(2)
-                        pyautogui.screenshot(f'{file_name}_text.jpg')
-                        image_file_path = f'{file_name}_text.jpg'
+                        time.sleep(5)
+                        pyautogui.screenshot(f'{file_name}.jpg')
+                        image_file_path = f'{file_name}.jpg'
                         for brand in brand_lists:
                             if brand in file_name:
                                 #make bucket and get folder name for each brand
                                 bucket = storage.bucket()
-                                folder_name = str(list(brand_dicts[brand].keys())[0])
+                                folder_name = get_week_of_month()
                                 folder_blob = bucket.blob(folder_name)
 
                                 #check specific folder name exist or not
