@@ -56,7 +56,7 @@ if ex_ip != '183.100.232.2444':
 
     import pytesseract
     import cv2
-    from matplotlib import pyplot as plt
+    # from matplotlib import pyplot as plt
     import urllib.request
 
 
@@ -69,13 +69,22 @@ if ex_ip != '183.100.232.2444':
     import sys
     import unittest
 
-    brand_lists = ['coupang', 'sin','today']
+    brand_lists = ['11','lotte','sin','naver','today','gmarket','auction','interpark','coupang']
 
     # save in Firebase
     # save in Firebase
     # save in Firebase
     def to_ascii(string):
         return int(sum([ord(character) for character in string]) / len(brand_lists))
+    
+    def get_week_of_month():
+        today = datetime.date.today()
+        first_day_of_month = datetime.date(today.year, today.month, 1)
+        week_number = (today - first_day_of_month).days // 7 + 1
+        week_syntax = str(today.month) + '월' + str(week_number) + '주차'
+    
+        return week_syntax
+
 
     #make dicts
     brand_dicts = {}
@@ -97,7 +106,7 @@ if ex_ip != '183.100.232.2444':
                 if brand in file_name:
                     #make bucket and get folder name for each brand
                     bucket = storage.bucket()
-                    folder_name = str(list(brand_dicts[brand].keys())[0])
+                    folder_name = get_week_of_month()
                     folder_blob = bucket.blob(folder_name)
 
                     #check specific folder name exist or not
@@ -300,7 +309,7 @@ if ex_ip != '183.100.232.2444':
 
                     #make bucket and get folder name for each brand
                     bucket = storage.bucket()
-                    folder_name = str(list(brand_dicts[brand].keys())[0])
+                    folder_name = get_week_of_month()
                     folder_blob = bucket.blob(folder_name)
 
                     #check specific folder name exist or not
@@ -354,7 +363,7 @@ if ex_ip != '183.100.232.2444':
                             if brand in file_name:
                                 #make bucket and get folder name for each brand
                                 bucket = storage.bucket()
-                                folder_name = str(list(brand_dicts[brand].keys())[0])
+                                folder_name = get_week_of_month()
                                 folder_blob = bucket.blob(folder_name)
 
                                 #check specific folder name exist or not
