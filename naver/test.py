@@ -9,7 +9,6 @@ cred = credentials.Certificate('upload-img-5b02f-firebase-adminsdk-frojl-fe3e210
 project_id = 'upload-img-5b02f.appspot.com'
 firebase_admin.initialize_app(cred, {'storageBucket': f'{project_id}'})
 
-from datetime import datetime
 import time
 import socket
 import re
@@ -64,15 +63,25 @@ if ex_ip != '183.100.232.2444':
     from PIL import Image
     import sys
     import unittest
+    import datetime
 
     # save in Firebase
     # save in Firebase
     # save in Firebase
 
-    brand_lists = ['coupang', 'sin','today','naver']
+    brand_lists = ['11','lotte','sin','naver','today','gmarket','auction','interpark','coupang']
 
     def to_ascii(string):
         return int(sum([ord(character) for character in string]) / len(brand_lists))
+    
+    def get_week_of_month():
+        today = datetime.date.today()
+        first_day_of_month = datetime.date(today.year, today.month, 1)
+        week_number = (today - first_day_of_month).days // 7 + 1
+        week_syntax = str(today.month) + '월' + str(week_number) + '주차'
+    
+        return week_syntax
+
 
     brand_dicts = {}
     for brand in brand_lists:
@@ -97,7 +106,7 @@ if ex_ip != '183.100.232.2444':
                 if brand in file_name:
                     #make bucket and get folder name for each brand
                     bucket = storage.bucket()
-                    folder_name = str(list(brand_dicts[brand].keys())[0])
+                    folder_name = get_week_of_month()
                     folder_blob = bucket.blob(folder_name)
 
                     #check specific folder name exist or not
@@ -110,11 +119,11 @@ if ex_ip != '183.100.232.2444':
                     blob.upload_from_filename(image_file_path)
                     print(f'File {file_name} uploaded to {folder_name}')
 
-                    # if os.path.exists('./'+file_name):
-                    #     os.remove('./'+file_name)
-                    #     print(f"{file_name}가 삭제되었습니다.")
-                    # else:
-                    #     print(f"{file_name}가 존재하지 않습니다.")
+                    if os.path.exists('./'+file_name):
+                        os.remove('./'+file_name)
+                        print(f"{file_name}가 삭제되었습니다.")
+                    else:
+                        print(f"{file_name}가 존재하지 않습니다.")
                     break
             return '동서가구'
         else:
@@ -128,11 +137,6 @@ if ex_ip != '183.100.232.2444':
             pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
             urllib.request.urlretrieve(url, "test1.jpg")
             image = cv2.imread("test1.jpg", cv2.IMREAD_GRAYSCALE) # 흑백 이미지로 로드
-            try:
-                if image == None:
-                    return 0,0,0,0,0
-            except:
-                pass
             img_width = int(image.shape[1])
             img_hight = int(image.shape[0])
             print(img_width, img_hight)
@@ -157,7 +161,6 @@ if ex_ip != '183.100.232.2444':
                 print('img_hight:', img_hight)
                 print('width_unit:', width_unit)
                 print('hight_unit:', hight_unit)
-                # time.sleep(1000)
 
                 for hight in range(width_unit, img_hight, hight_unit):
                     now_hight = (hight/img_hight)*50
@@ -181,19 +184,19 @@ if ex_ip != '183.100.232.2444':
                     # plt.show()
 
                     if now_hight > 30:
-                        return '이미지없음'
+                        return '이미지없음',hight
                     elif text.count('동서가구') + text.count('동셔가구') + text.count('써가구') != 0:
                         #plt.show()
-                        return '동서가구'
+                        return '동서가구', hight
             except:
                 pass
 
 
         image, img_width, img_hight, width_unit, hight_unit = 이미지확인(url)
-        check = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
-        print(check)
+        check,hight = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
+        print(check,hight)
 
-        return check
+        return check,hight
 
 
 
@@ -257,7 +260,8 @@ if ex_ip != '183.100.232.2444':
         soup = bs(code, 'html.parser')
 
         # setting file_name
-        now = datetime.now()
+        import datetime
+        now = datetime.datetime.now()
         now = now.strftime('%Y%m%d %H%M%S')
         print(url)
         pro_num = url.split('/')[-1]
@@ -270,7 +274,7 @@ if ex_ip != '183.100.232.2444':
 
         # #01 상단
         main = soup.find('fieldset').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
-        # print(main)
+        print(main)
 
         check = txt_check(file_name,main)
         if check == '동서가구':
@@ -278,6 +282,7 @@ if ex_ip != '183.100.232.2444':
         elif main.count('현재판매중인상품이아닙니다'):
             print("품절 상품 / 패스")
             return
+
 
         # #02 하단
         element = driver.find_element(By.CLASS_NAME,"product_info_notice")
@@ -313,7 +318,7 @@ if ex_ip != '183.100.232.2444':
         ##
         ##
         ##
-        check = img_check(img_url)
+        check,hight = img_check(img_url)
         if check == '동서가구':
             count = 0
             while count < len(lists) : 
@@ -326,15 +331,14 @@ if ex_ip != '183.100.232.2444':
                 driver.execute_script(f"window.scrollBy(0, {location['y']});")
                 time.sleep(3)
                 pyautogui.screenshot(f'{file_name}.jpg')
-                print(f'{file_name}.jpg')
-
                 image_file_path = f'{file_name}.jpg'
                 for brand in brand_lists:
+
                     if brand in file_name:
 
                         #make bucket and get folder name for each brand
                         bucket = storage.bucket()
-                        folder_name = str(list(brand_dicts[brand].keys())[0])
+                        folder_name = get_week_of_month()
                         folder_blob = bucket.blob(folder_name)
 
                         #check specific folder name exist or not
@@ -346,11 +350,11 @@ if ex_ip != '183.100.232.2444':
                         blob = bucket.blob(f'{folder_name}/{image_file_path}')
                         blob.upload_from_filename(image_file_path)
                         print(f'File {file_name} uploaded to {folder_name}')
-                        # if os.path.exists('./'+file_name):
-                        #     os.remove('./'+file_name)
-                        #     print(f"{file_name}가 삭제되었습니다.")
-                        # else:
-                        #     print(f"{file_name}가 존재하지 않습니다.")
+                        if os.path.exists('./'+file_name):
+                            os.remove('./'+file_name)
+                            print(f"{file_name}가 삭제되었습니다.")
+                        else:
+                            print(f"{file_name}가 존재하지 않습니다.")
                         break
             return '동서가구'
 
@@ -367,26 +371,27 @@ if ex_ip != '183.100.232.2444':
                 ##
                 ##
                 ##
-                check = img_check(img_url)
+                check,hight = img_check(img_url)
                 if check == '동서가구':
                     count = 0
                     while count < len(lists) : 
+
                         img_element = driver.find_element(By.XPATH, f"//img[@data-src='{img_url}']")
                         location = img_element.location
                         print(location)
 
-                        driver.execute_script(f"window.scrollBy(0, {location['y']});")
-                        time.sleep(3)
-                        pyautogui.screenshot(f'{file_name}_img.jpg')
-                        print(f'{file_name}_img.jpg')
 
-                        image_file_path = f'{file_name}_img.jpg'
+                        driver.execute_script("arguments[0].scrollIntoView();", img_element) # {behavior: 'smooth', block: 'start', inline: 'nearest', aligntotop: true}
+                        time.sleep(3)
+                        pyautogui.screenshot(f'{file_name}.jpg')
+                        print(f'{file_name}.jpg')
+
+                        image_file_path = f'{file_name}.jpg'
                         for brand in brand_lists:
                             if brand in file_name:
-
                                 #make bucket and get folder name for each brand
                                 bucket = storage.bucket()
-                                folder_name = str(list(brand_dicts[brand].keys())[0])
+                                folder_name = get_week_of_month()
                                 folder_blob = bucket.blob(folder_name)
 
                                 #check specific folder name exist or not
@@ -398,25 +403,25 @@ if ex_ip != '183.100.232.2444':
                                 blob = bucket.blob(f'{folder_name}/{image_file_path}')
                                 blob.upload_from_filename(image_file_path)
                                 print(f'File {file_name} uploaded to {folder_name}')
-                                # if os.path.exists('./'+file_name):
-                                #     os.remove('./'+file_name)
-                                #     print(f"{file_name}가 삭제되었습니다.")
-                                # else:
-                                #     print(f"{file_name}가 존재하지 않습니다.")
-                                break
+                                if os.path.exists('./'+file_name):
+                                    os.remove('./'+file_name)
+                                    print(f"{file_name}가 삭제되었습니다.")
+                                else:
+                                    print(f"{file_name}가 존재하지 않습니다.")
+
                         break
                     break
             except:
                 pass
-
-        driver.quit()
-        if check == '동서가구':
-            return '동서가구'
-        else:
-            return
+        return check
+        # driver.quit()
+        # if check == '동서가구':
+        #     return '동서가구'
+        # else:
+        #     return
 
         #img #img #img #img #img #img #img #img #img #img
-    start_time = datetime.now()
+    start_time = datetime.datetime.now()
 
     for li in range(start_cnt, len(lists)):
         check = EA_cou_item_ck(lists[li])
@@ -426,7 +431,7 @@ if ex_ip != '183.100.232.2444':
             with open('nav_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                 write = csv.writer(f)
                 write.writerows([lists])
-            end_time = datetime.now()
+            end_time = datetime.datetime.now()
             print(f'총 걸린시간: {end_time - start_time}')
 
         else:
@@ -435,5 +440,5 @@ if ex_ip != '183.100.232.2444':
             with open('nav_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                 write = csv.writer(f)
                 write.writerows([lists])
-            end_time = datetime.now()
+            end_time = datetime.datetime.now()
             print(f'총 걸린시간: {end_time - start_time}')
