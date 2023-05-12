@@ -129,6 +129,7 @@ class WorkerThread_cou(QThread):
         brand_lists = brand()
         
         def txt_check(file_name, text):  # return '동서가구'
+            self.log_img_update.emit(text)
             if text.count("동서가구"):
                 print(text)
                 print("\n\n\n")
@@ -153,6 +154,11 @@ class WorkerThread_cou(QThread):
                         blob.upload_from_filename(image_file_path)
                         print(f'File {file_name} uploaded to {folder_name}')
                         self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                        # if os.path.exists('./'+file_name):
+                        #     os.remove('./'+file_name)
+                        #     print(f"{file_name}가 삭제되었습니다.")
+                        # else:
+                        #     print(f"{file_name}가 존재하지 않습니다.")
                         break
 
                 return '동서가구'
@@ -219,19 +225,22 @@ class WorkerThread_cou(QThread):
                         # plt.show()
 
                         if hight > (img_hight)*0.9:  # img_hight
-                            return '이미지없음', hight
+                            return hight,img_hight,'이미지없음'
                         elif text.count('동서가구') + text.count('동셔가구') + text.count('써가구') != 0:
                             # plt.show()
-                            return '동서가구', hight
+                            return hight,img_hight,'동서가구'
                 except:
                     pass
 
             image, img_width, img_hight, width_unit, hight_unit = 이미지확인(url)
-            check, hight = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
+            hight,img_hight,check = 상단글자(image, width_unit, hight_unit, img_width, img_hight)
 
-            return check, hight
-        # log
+            return hight, img_hight, check
+        # cou
+        # cou
+        # cou
         if self.test == '쿠팡':
+            #log
             self.log_update.emit(f'firebase 서버 접속')
             if ex_ip != '183.100.232.2444':
                 lists, start_cnt = open_csv('cou') # cou_list.csv
@@ -260,8 +269,7 @@ class WorkerThread_cou(QThread):
                     # log
                     self.log_update.emit(f'쿠팡 [텍스트 필수 표기정보] 확인 중..')
                     driver.find_element(By.ID, 'itemBrief').click()
-                    brief = soup.find('div', id="itemBrief").text.strip().replace(
-                        " ", "").replace("\n", "").replace("\t", "").replace("\r", "")
+                    brief = soup.find('div', id="itemBrief").text.strip().replace (" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
                     check = txt_check(file_name, brief)
                     if check == '동서가구':
                         return '동서가구'
@@ -273,8 +281,7 @@ class WorkerThread_cou(QThread):
                     time.sleep(1)
                     code = driver.page_source
                     soup = bs(code, 'html.parser')
-                    etc = soup.find('li', class_='product-etc tab-contents__content').text.strip(
-                    ).replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
+                    etc = soup.find('li', class_='product-etc tab-contents__content').text.strip().replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
                     check = txt_check(file_name, etc)
                     if check == '동서가구':
                         return '동서가구'
@@ -290,7 +297,7 @@ class WorkerThread_cou(QThread):
                     ##
                     ##
                     ##
-                    check, hight = img_check(img_url, 640, 150, 100, 300)
+                    hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                     if check == '동서가구':
                         pyautogui.screenshot(f'{file_name}.jpg')
                         print(f'{file_name}.jpg')
@@ -316,6 +323,8 @@ class WorkerThread_cou(QThread):
                                 print(f'File {file_name} uploaded to {folder_name}')
                                 self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
                         return '동서가구'
+                    
+                    # 05 상세이미지
                     detail = soup.find('div', id="productDetail")
                     imgs = detail.find_all('img')
                     print(imgs)
@@ -330,7 +339,7 @@ class WorkerThread_cou(QThread):
                             ##
                             ##
                             ##
-                            check, hight = img_check(img_url, 640, 150, 100, 300)
+                            hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                             if check == '동서가구':
                                 count = 0
                                 while count < len(lists):  # len(lists)
@@ -368,6 +377,12 @@ class WorkerThread_cou(QThread):
                                             blob = bucket.blob(f'{folder_name}/{image_file_path}')
                                             blob.upload_from_filename(image_file_path)
                                             print(f'File {file_name} uploaded to {folder_name}')
+                                            self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                            if os.path.exists('./'+file_name):
+                                                os.remove('./'+file_name)
+                                                print(f"{file_name}가 삭제되었습니다.")
+                                            else:
+                                                print(f"{file_name}가 존재하지 않습니다.")
                                             break
                                     break
                                 break
@@ -406,6 +421,9 @@ class WorkerThread_cou(QThread):
                 percent = int((li+1)/(len(lists)/100))
                 # log
                 self.progress_update.emit(percent)                
+        # llst
+        # llst
+        # llst
         elif self.test == 'llst': # 완
             self.log_update.emit(f'firebase 서버 접속')
             if ex_ip != '183.100.232.2444':
@@ -417,7 +435,7 @@ class WorkerThread_cou(QThread):
                     code = driver.page_source
                     soup = bs(code, 'html.parser')
                     pro_num = url.split('/')[4].split('?')[0]
-                    file_name = '11' + '_' + now.split('.')[0].replace('-', '').replace(' ', '_').replace(':', '') + '_' + pro_num
+                    file_name = 'llst' + '_' + now.split('.')[0].replace('-', '').replace(' ', '_').replace(':', '') + '_' + pro_num
 
                     # text #text #text #text #text #text #text #text
                     # text #text #text #text #text #text #text #text
@@ -444,7 +462,7 @@ class WorkerThread_cou(QThread):
                     print(main)
                     check = txt_check(file_name,main)
                     if check == '동서가구':
-                        self.log_update.emit(f'동서가구')
+                        self.log_update.emit('동서가구')
                         return '동서가구'
                     elif main.count('현재판매중인상품이아닙니다'):
                         print("품절 상품 / 패스")
@@ -458,13 +476,15 @@ class WorkerThread_cou(QThread):
                     # 04 메인 이미지
                     # log
                     self.log_update.emit(f'11번가 [이미지 대표이미지] 확인 중..')
+                    actions = ActionChains(driver)  
+                    actions.send_keys(Keys.HOME).perform()  
                     img_url = soup.find('div', id="productImg") 
                     img_url = img_url.find('img')['src']
                     print(img_url)
                     ##
                     ##
                     ##
-                    check = img_check(img_url,640,150,100,300)
+                    hight, img_hight, check = img_check(img_url,640,150,100,300)
                     if check == '동서가구':
                         pyautogui.screenshot(f'{file_name}.jpg')
                         image_file_path = f'{file_name}.jpg'
@@ -486,7 +506,7 @@ class WorkerThread_cou(QThread):
                                 print(f'File {file_name} uploaded to {folder_name}')
                                 self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
                                 break
-                        self.log_update.emit(f'동서가구')
+                        self.log_update.emit('동서가구')
                         return '동서가구'
                     
 
@@ -498,18 +518,26 @@ class WorkerThread_cou(QThread):
                     iframe_html = driver.page_source
                     iframe_html = bs(iframe_html,'html.parser')
                     imgs = iframe_html.find_all('img')
+                    print(imgs)
+                    imgs_cnt = 1
                     links = []
                     for img in imgs:
-                        links.append(img["src"])
-                    for link in links:
+                        self.log_update.emit(f'11번가 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
+                        imgs_cnt += 1
+                        src = img['src']
+                        img_url = src
+                    #     links.append(img["src"])
+                    # print(links)
+                    # for link in links:
                         try:
-                            print(link)
+                            # print(link)
+
                             ##
                             ##
                             ##
-                            check, hight = img_check(link)
+                            hight, img_hight, check = img_check(img_url,640,150,100,300)
                             if check == '동서가구': 
-                                self.log_update.emit(f'동서가구')
+                                self.log_update.emit('동서가구')
                                 count = 0  
 
                                 while count < len(links): #lists
@@ -543,6 +571,11 @@ class WorkerThread_cou(QThread):
                                             blob.upload_from_filename(image_file_path)
                                             print(f'File {file_name} uploaded to {folder_name}')
                                             self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                            if os.path.exists('./'+file_name):
+                                                os.remove('./'+file_name)
+                                                print(f"{file_name}가 삭제되었습니다.")
+                                            else:
+                                                print(f"{file_name}가 존재하지 않습니다.")
                                             break
                                 break
                         
@@ -572,7 +605,7 @@ class WorkerThread_cou(QThread):
                 else:
                     lists[li] = [lists[li], '패스']
                     # list_test csv파일로 저장
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('11_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('패스')
@@ -582,41 +615,38 @@ class WorkerThread_cou(QThread):
                 percent = int((li+1)/(len(lists)/100))
                 # log
                 self.progress_update.emit(percent)
+        # lot
+        # lot
+        # lot
         elif self.test == 'lot': # 완
             self.log_update.emit(f'firebase 서버 접속')
             if ex_ip != '183.100.232.2444':
-                lists, start_cnt = open_csv('lot') # cou_list.csv
+                lists, start_cnt = open_csv('lot') # lot_list.csv
                 # brand_lists = brand()   
                 def EA_cou_item_ck(url):
                     driver.get(url)
                     time.sleep(3)
 
-                    #스크롤 다운
-                    # Define the scroll height increment and total scroll height
-                    scroll_height_increment = 300 # Change this value to control the scroll height
+                    scroll_height_increment = 300 
                     total_scroll_height = driver.execute_script("return document.body.scrollHeight")
                     
-                    # Scroll down to the end of the webpage using JavaScript
+
                     while True:
-                        # Calculate the new scroll height
                         new_scroll_height = driver.execute_script("return window.pageYOffset + " + str(scroll_height_increment) + ";")
                         if new_scroll_height > total_scroll_height:
                             new_scroll_height = total_scroll_height
 
-                        # Scroll down to the new scroll height using JavaScript
                         driver.execute_script("window.scrollTo(0, " + str(new_scroll_height) + ");")
 
-                        # Wait for a short time to allow the page to load
                         time.sleep(0.3)
 
-                        # Break the loop if the scroll height reaches the end of the webpage
                         if driver.execute_script("return window.pageYOffset + window.innerHeight;") >= total_scroll_height:
                             break
                     code = driver.page_source
                     soup = bs(code, 'html.parser')
 
                     pro_num = url.split('=')[1]
-                    file_name = 'llst' + '_' + now.split('.')[0].replace('-', '').replace(' ', '_').replace(':', '') + '_' + pro_num
+                    file_name = 'lotte' + '_' + now.split('.')[0].replace('-', '').replace(' ', '_').replace(':', '') + '_' + pro_num
 
                     # text #text #text #text #text #text #text #text
                     # 01 상단
@@ -625,7 +655,7 @@ class WorkerThread_cou(QThread):
                     main = soup.find('div', class_='purchase_product').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
                     check = txt_check(file_name,main)
                     if check == '동서가구':
-                        self.log_update.emit(f'동서가구')
+                        self.log_update.emit('동서가구')
                         return '동서가구'
                     elif main.count('현재판매중인상품이아닙니다'):
                         print("품절 상품 / 패스")
@@ -635,18 +665,18 @@ class WorkerThread_cou(QThread):
                     # log
                     self.log_update.emit(f'롯데온 [구매/배송정보] 확인 중..')
                     driver.find_element(By. CLASS_NAME, 'tab2').click()
-                    time.sleep(.5)
+                    time.sleep(2)
                     soup = bs(driver.page_source, 'html.parser')
 
                     brief = soup.find('div', class_="wrap_detail content2 on").text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
                     check = txt_check(file_name,brief)
                     if check == '동서가구':
-                        self.log_update.emit(f'동서가구')
+                        self.log_update.emit('동서가구')
                         return '동서가구'
 
 
                     # img #img #img #img #img #img #img #img #img #img
-                    # 04 이미지
+                    # 03 이미지
                     # log
                     self.log_update.emit(f'롯데온 [이미지 대표이미지] 확인 중..')
                     actions = ActionChains(driver)  
@@ -657,7 +687,7 @@ class WorkerThread_cou(QThread):
                     ##
                     ##
                     ##
-                    check = img_check(img_url, 640, 150, 100, 300)
+                    hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                     if check == '동서가구':
                         count = 0
                         while count < len(lists) : #len(lists)
@@ -679,17 +709,17 @@ class WorkerThread_cou(QThread):
                             for brand in brand_lists:
                                 if brand in file_name:
 
-                                    #make bucket and get folder name for each brand
+
                                     bucket = storage.bucket()
                                     folder_name = get_week_of_month()
                                     folder_blob = bucket.blob(folder_name)
 
-                                    #check specific folder name exist or not
+
                                     if not folder_blob.exists():
                                         print(f'Creating folder {folder_name}')
                                         folder_blob.upload_from_string('')
 
-                                    # Upload a file to the folder
+
                                     blob = bucket.blob(f'{folder_name}/{image_file_path}')
                                     blob.upload_from_filename(image_file_path)
                                     print(f'File {file_name} uploaded to {folder_name}')
@@ -697,15 +727,17 @@ class WorkerThread_cou(QThread):
                             count +=1
                         return '동서가구'
                     
-                    #05 상세페이지
+                    #04 상세페이지
                     self.log_update.emit(f'롯데온 [이미지 상세이미지] 확인 중..')
                     driver.find_element(By. CLASS_NAME, 'tab1').click()
                     time.sleep(1)
                     soup = bs(driver.page_source, 'html.parser')
                     detail = soup.find('div', class_="detail")
                     imgs = detail.find_all('img')
-
+                    imgs_cnt = 1
                     for img in imgs:
+                        self.log_update.emit(f'롯데온 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
+                        imgs_cnt += 1
                         try:
                             src = img['src']
                             if src.count('data:image/gif;') == 0:
@@ -715,7 +747,7 @@ class WorkerThread_cou(QThread):
                                 ##
                                 ##
                                 ##
-                                check = img_check(img_url, 640, 150, 100, 300)
+                                hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                                 if check == '동서가구':
                                     count = 0
 
@@ -738,25 +770,27 @@ class WorkerThread_cou(QThread):
                                         for brand in brand_lists:
                                             if brand in file_name:
 
-                                                #make bucket and get folder name for each brand
+
                                                 bucket = storage.bucket()
                                                 folder_name = get_week_of_month()
                                                 folder_blob = bucket.blob(folder_name)
 
-                                                #check specific folder name exist or not
+
                                                 if not folder_blob.exists():
                                                     print(f'Creating folder {folder_name}')
                                                     folder_blob.upload_from_string('')
 
-                                                # Upload a file to the folder
+
                                                 blob = bucket.blob(f'{folder_name}/{image_file_path}')
                                                 blob.upload_from_filename(image_file_path)
                                                 print(f'File {file_name} uploaded to {folder_name}')
+                                                self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
                                                 if os.path.exists('./'+file_name):
                                                     os.remove('./'+file_name)
                                                     print(f"{file_name}가 삭제되었습니다.")
                                                 else:
                                                     print(f"{file_name}가 존재하지 않습니다.")
+                                                    
                                         
                                         break
                                     break
@@ -765,7 +799,7 @@ class WorkerThread_cou(QThread):
 
                     driver.quit()
                     if check == '동서가구':
-                        self.log_update.emit(f'동서가구')
+                        self.log_update.emit('동서가구')
                         return '동서가구'
                     else:
                         return
@@ -801,6 +835,9 @@ class WorkerThread_cou(QThread):
                 percent = int((li+1)/(len(lists)/100))
                 # log
                 self.progress_update.emit(percent)
+        # ss
+        # ss
+        # ss
         elif self.test == 'ss':
             self.log_update.emit(f'firebase 서버 접속')
             if ex_ip != '183.100.232.2444':
@@ -812,7 +849,7 @@ class WorkerThread_cou(QThread):
                     code = driver.page_source
                     soup = bs(code, 'html.parser')
                     pro_num = url.split('/')[-1]
-                    file_name = 'ss' + '_' + now.split('.')[0].replace('-', '').replace(' ', '_').replace(':', '') + '_' + pro_num
+                    file_name =  'naver'+'_'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
 
                     # text #text #text #text #text #text #text #text
                     # 01 상단
@@ -821,32 +858,30 @@ class WorkerThread_cou(QThread):
                     main = soup.find('fieldset').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
                     check = txt_check(file_name, main)
                     if check == '동서가구':
-                        self.log_update.emit(f'동서가구')
+                        self.log_update.emit('동서가구')
                         return '동서가구'
                     elif main.count('현재판매중인상품이아닙니다'):
                         print("품절 상품 / 패스")
                         return
                     
-                    
                     # 02 하단
+                    # log
                     self.log_update.emit(f'스마트스토어 [텍스트 하단] 확인 중..')
                     element = driver.find_element(By.CLASS_NAME,"product_info_notice")
                     driver.execute_script("arguments[0].scrollIntoView();", element)
 
                     main = soup.find('div', id='INTRODUCE').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
-                    # print(main)
 
-                    check = txt_check(file_name,main)
+                    check = txt_check(file_name, main)
                     if check == '동서가구':
-                        self.log_update.emit(f'동서가구')
+                        self.log_update.emit('동서가구')
                         return '동서가구'
                     elif main.count('현재판매중인상품이아닙니다'):
                         print("품절 상품 / 패스")
                         return
-                
                     
                     # img #img #img #img #img #img #img #img #img #img
-                    # 04 메인 이미지
+                    # 03 이미지
                     # log
                     self.log_update.emit(f'스마트스토어 [이미지 대표이미지] 확인 중..')
                     actions = ActionChains(driver)  
@@ -857,57 +892,69 @@ class WorkerThread_cou(QThread):
                         try:
                             if imm['alt'] == '대표이미지':
                                 img_url = imm['data-src']
-                                print(img_url)
                                 break
                         except:
                             pass
                     ##
                     ##
                     ##
-                    check, hight = img_check(img_url, 640, 150, 100, 300)
-                    ################여기까지##################################3
+                    hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                     if check == '동서가구':
-                        self.log_update.emit(f'동서가구')
-                        pyautogui.screenshot(f'{file_name}.jpg')
-                        print(f'{file_name}.jpg')
+                        count = 0
+                        while count < len(lists) : 
+                            
+                            img_element = driver.find_element(By.XPATH, f"//img[@data-src='{img_url}']")
+                            print('find img_element')
+                            location = img_element.location
+                            print(location)
 
-                        image_file_path = f'{file_name}.jpg'
-                        for brand in brand_lists:
+                            driver.execute_script(f"window.scrollBy(0, {location['y']});")
+                            time.sleep(3)
+                            pyautogui.screenshot(f'{file_name}.jpg')
+                            image_file_path = f'{file_name}.jpg'
+                                    
+                            for brand in brand_lists:
+                                if brand in file_name:
+                                    #make bucket and get folder name for each brand
+                                    bucket = storage.bucket()
+                                    folder_name = get_week_of_month()
+                                    folder_blob = bucket.blob(folder_name)
 
-                            if brand in file_name:
+                                    #check specific folder name exist or not
+                                    if not folder_blob.exists():
+                                        print(f'Creating folder {folder_name}')
+                                        folder_blob.upload_from_string('')
 
-                                # make bucket and get folder name for each brand
-                                bucket = storage.bucket()
-                                folder_name = get_week_of_month()
-                                folder_blob = bucket.blob(folder_name)
-
-                                # check specific folder name exist or not
-                                if not folder_blob.exists():
-                                    print(f'Creating folder {folder_name}')
-                                    folder_blob.upload_from_string('')
-
-                                # Upload a file to the folder
-                                blob = bucket.blob(f'{folder_name}/{image_file_path}')
-                                blob.upload_from_filename(image_file_path)
-                                print(f'File {file_name} uploaded to {folder_name}')
-                                self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                    # Upload a file to the folder
+                                    blob = bucket.blob(f'{folder_name}/{image_file_path}')
+                                    blob.upload_from_filename(image_file_path)
+                                    print(f'File {file_name} uploaded to {folder_name}')
+                                    if os.path.exists('./'+file_name):
+                                        os.remove('./'+file_name)
+                                        print(f"{file_name}가 삭제되었습니다.")
+                                    else:
+                                        print(f"{file_name}가 존재하지 않습니다.")
+                                    break
                         return '동서가구'
-                    detail = soup.find('div', id="productDetail")
+                    
+                    # 04 상세 이미지
+                    # log
+                    detail = soup.find('div', id='INTRODUCE')
                     imgs = detail.find_all('img')
                     print(imgs)
                     imgs_cnt = 1
                     for img in imgs:
-                        # log
-                        self.log_update.emit(f'쿠팡 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
+                        self.log_update.emit(f'스마트스토어 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
                         imgs_cnt += 1
                         try:
-                            src = img['src']
+                            src = img['data-src']
                             img_url = src
                             ##
                             ##
                             ##
-                            check, hight = img_check(img_url, 640, 150, 100, 300)
+                            hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                             if check == '동서가구':
+                                self.log_update.emit('동서가구')
                                 count = 0
                                 while count < len(lists):  # len(lists)
                                     img_element = driver.find_element(By.XPATH, f"//img[@src='{img_url}']")
@@ -915,17 +962,11 @@ class WorkerThread_cou(QThread):
                                     location = img_element.location
                                     print(location)
 
-                                    script = "document.querySelector('.product-detail-seemore-btn').click();"
+                                    driver.execute_script("arguments[0].scrollIntoView();", img_element) # {behavior: 'smooth', block: 'start', inline: 'nearest', aligntotop: true}
                                     time.sleep(3)
-                                    driver.execute_script(script)
-                                    if hight < 50:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*1.7});")
-                                    elif 50 < hight < 80:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)});")
-                                    else:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*0.5});")
-                                    time.sleep(2)
                                     pyautogui.screenshot(f'{file_name}.jpg')
+                                    print(f'{file_name}.jpg')
+
                                     image_file_path = f'{file_name}.jpg'
 
                                     for brand in brand_lists:
@@ -944,12 +985,19 @@ class WorkerThread_cou(QThread):
                                             blob = bucket.blob(f'{folder_name}/{image_file_path}')
                                             blob.upload_from_filename(image_file_path)
                                             print(f'File {file_name} uploaded to {folder_name}')
+                                            self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                            if os.path.exists('./'+file_name):
+                                                os.remove('./'+file_name)
+                                                print(f"{file_name}가 삭제되었습니다.")
+                                            else:
+                                                print(f"{file_name}가 존재하지 않습니다.")
                                             break
                                     break
                                 break
                         except:
                             pass
                     return check
+                
             print('시작', datetime.datetime.now())
             for li in range(start_cnt, len(lists)):
                 #log
@@ -961,7 +1009,7 @@ class WorkerThread_cou(QThread):
 
                 if check == '동서가구':
                     lists[li] = [lists[li], '스캔필요']
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('nav_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('스캔필요')
@@ -972,7 +1020,7 @@ class WorkerThread_cou(QThread):
                 else:
                     lists[li] = [lists[li], '패스']
                     # list_test csv파일로 저장
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('nav_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('패스')
@@ -981,25 +1029,28 @@ class WorkerThread_cou(QThread):
 
                 percent = int((li+1)/(len(lists)/100))
                 # log
-                self.progress_update.emit(percent)
-        elif self.test == '신세계':
+                self.progress_update.emit(percent)                
+        # sin
+        # sin
+        # sin
+        elif self.test == 'sin':
             self.log_update.emit(f'firebase 서버 접속')
             if ex_ip != '183.100.232.2444':
-                lists, start_cnt = open_csv('cou') # cou_list.csv
-                brand_lists = brand()   
+                lists, start_cnt = open_csv('sin') # cou_list.csv
+                # brand_lists = brand()   
                 def EA_cou_item_ck(url):
                     driver.get(url)
                     time.sleep(3)
                     code = driver.page_source
                     soup = bs(code, 'html.parser')
-                    pro_num = url.split('=')[1].split('&')[0]
-                    file_name = 'cou' + '_' + now.split('.')[0].replace('-', '').replace(' ', '_').replace(':', '') + '_' + pro_num
+                    pro_num = url.split('=')[1]
+                    file_name = 'sin'+'_'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
 
                     # text #text #text #text #text #text #text #text
                     # 01 상단
                     # log
-                    self.log_update.emit(f'쿠팡 [텍스트 상단] 확인 중..')
-                    main = soup.find('div', class_='prod-atf-main').text.strip().replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
+                    self.log_update.emit(f'신세계 [텍스트 상단] 확인 중..')
+                    main = soup.find('div', 'cdtl_row_top').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
                     check = txt_check(file_name, main)
                     if check == '동서가구':
                         return '동서가구'
@@ -1009,40 +1060,37 @@ class WorkerThread_cou(QThread):
                     
                     # 02 필수 표기정보
                     # log
-                    self.log_update.emit(f'쿠팡 [텍스트 필수 표기정보] 확인 중..')
-                    driver.find_element(By.ID, 'itemBrief').click()
-                    brief = soup.find('div', id="itemBrief").text.strip().replace(
-                        " ", "").replace("\n", "").replace("\t", "").replace("\r", "")
-                    check = txt_check(file_name, brief)
+                    self.log_update.emit(f'신세계 [텍스트 필수 표기정보] 확인 중..')
+                    brief = soup.find_all('div', class_="cdtl_cont_info")
+                    brief_text = ''
+                    i = 0
+                    for br in brief:
+                        brief_text = br.text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
+                        if str.__contains__(brief_text,'동서가구'):
+                            ActionChains(driver).move_to_element(driver.find_elements(By.CLASS_NAME,"cdtl_cont_info")[i]).perform()
+                            break
+                        i += 1
+                        print(i)
+                    brief = brief_text
+                    check = txt_check(file_name,brief)
                     if check == '동서가구':
-                        return '동서가구'
-
-                    # 03 배송/교환/반품 안내
-                    # log
-                    self.log_update.emit(f'쿠팡 [텍스트 배송/교환/반품 안내] 확인 중..')
-                    driver.find_element(By.NAME, 'etc').click()
-                    time.sleep(1)
-                    code = driver.page_source
-                    soup = bs(code, 'html.parser')
-                    etc = soup.find('li', class_='product-etc tab-contents__content').text.strip(
-                    ).replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
-                    check = txt_check(file_name, etc)
-                    if check == '동서가구':
+                        self.log_update.emit('동서가구')
                         return '동서가구'
                     
                     # img #img #img #img #img #img #img #img #img #img
-                    # 04 이미지
+                    # 04 메인 이미지
                     # log
-                    self.log_update.emit(f'쿠팡 [이미지 대표이미지] 확인 중..')
-                    actions = ActionChains(driver)  
-                    actions.send_keys(Keys.HOME).perform()  
-                    img_url = 'https:' + soup.find('img', class_="prod-image__detail")['src']
+                    self.log_update.emit(f'신세계 [이미지 대표이미지] 확인 중..')
+
+                    img_url = soup.find('span', class_='cdtl_imgbox imgzoom')
+                    img_url = img_url.find('img')['src'] 
                     print(img_url)
                     ##
                     ##
                     ##
-                    check, hight = img_check(img_url, 640, 150, 100, 300)
+                    hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                     if check == '동서가구':
+                        self.log_update.emit('동서가구')
                         pyautogui.screenshot(f'{file_name}.jpg')
                         print(f'{file_name}.jpg')
 
@@ -1066,14 +1114,29 @@ class WorkerThread_cou(QThread):
                                 blob.upload_from_filename(image_file_path)
                                 print(f'File {file_name} uploaded to {folder_name}')
                                 self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                if os.path.exists('./'+file_name):
+                                    os.remove('./'+file_name)
+                                    print(f"{file_name}가 삭제되었습니다.")
+                                else:
+                                    print(f"{file_name}가 존재하지 않습니다.")
+                                print(f'File {file_name} uploaded to {folder_name}')
+                                self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
                         return '동서가구'
-                    detail = soup.find('div', id="productDetail")
-                    imgs = detail.find_all('img')
-                    print(imgs)
+                    
+                    # 05 상세 페이지
+                    driver.find_element(By.CLASS_NAME,'cdtl_seller_html_collapse').click()
+                    driver.find_element(By.TAG_NAME,'body').send_keys(Keys.HOME)
+                    html = driver.find_element(By.CLASS_NAME,'cdtl_capture_img')
+                    iframe = html.find_element(By.TAG_NAME, 'iframe')
+                    driver.switch_to.frame(iframe)
+                    time.sleep(2)
+                    iframe_html = driver.page_source
+                    iframe_html = bs(iframe_html,'html.parser')
+                    imgs = iframe_html.find_all('img')
                     imgs_cnt = 1
                     for img in imgs:
                         # log
-                        self.log_update.emit(f'쿠팡 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
+                        self.log_update.emit(f'신세계 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
                         imgs_cnt += 1
                         try:
                             src = img['src']
@@ -1081,36 +1144,30 @@ class WorkerThread_cou(QThread):
                             ##
                             ##
                             ##
-                            check, hight = img_check(img_url, 640, 150, 100, 300)
+                            hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                             if check == '동서가구':
+                                self.log_update.emit('동서가구')
                                 count = 0
                                 while count < len(lists):  # len(lists)
                                     img_element = driver.find_element(By.XPATH, f"//img[@src='{img_url}']")
                                     print('find img_element')
                                     location = img_element.location
                                     print(location)
+                                    img_element.click()
+                                    driver.execute_script("arguments[0].scrollIntoView();", img_element)
+                                    time.sleep(1)
 
-                                    script = "document.querySelector('.product-detail-seemore-btn').click();"
-                                    time.sleep(3)
-                                    driver.execute_script(script)
-                                    if hight < 50:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*1.7});")
-                                    elif 50 < hight < 80:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)});")
-                                    else:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*0.5});")
-                                    time.sleep(2)
                                     pyautogui.screenshot(f'{file_name}.jpg')
+                                    print(f'{file_name}.jpg')
                                     image_file_path = f'{file_name}.jpg'
-
                                     for brand in brand_lists:
                                         if brand in file_name:
-                                            # make bucket and get folder name for each brand
+                                            #make bucket and get folder name for each brand
                                             bucket = storage.bucket()
                                             folder_name = get_week_of_month()
                                             folder_blob = bucket.blob(folder_name)
 
-                                            # check specific folder name exist or not
+                                            #check specific folder name exist or not
                                             if not folder_blob.exists():
                                                 print(f'Creating folder {folder_name}')
                                                 folder_blob.upload_from_string('')
@@ -1119,7 +1176,15 @@ class WorkerThread_cou(QThread):
                                             blob = bucket.blob(f'{folder_name}/{image_file_path}')
                                             blob.upload_from_filename(image_file_path)
                                             print(f'File {file_name} uploaded to {folder_name}')
-                                            break
+                                            self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                            if os.path.exists('./'+file_name):
+                                                os.remove('./'+file_name)
+                                                print(f"{file_name}가 삭제되었습니다.")
+                                            else:
+                                                print(f"{file_name}가 존재하지 않습니다.")
+                                            print(f'File {file_name} uploaded to {folder_name}')
+                                            self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                    count +=1
                                     break
                                 break
                         except:
@@ -1136,7 +1201,7 @@ class WorkerThread_cou(QThread):
 
                 if check == '동서가구':
                     lists[li] = [lists[li], '스캔필요']
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('sin_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('스캔필요')
@@ -1147,7 +1212,7 @@ class WorkerThread_cou(QThread):
                 else:
                     lists[li] = [lists[li], '패스']
                     # list_test csv파일로 저장
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('sin_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('패스')
@@ -1157,67 +1222,50 @@ class WorkerThread_cou(QThread):
                 percent = int((li+1)/(len(lists)/100))
                 # log
                 self.progress_update.emit(percent)
-        elif self.test == '오늘의집':
+        # oj
+        # oj
+        # oj
+        elif self.test == 'oj':
             self.log_update.emit(f'firebase 서버 접속')
             if ex_ip != '183.100.232.2444':
-                lists, start_cnt = open_csv('cou') # cou_list.csv
+                lists, start_cnt = open_csv('o') # cou_list.csv
                 brand_lists = brand()   
                 def EA_cou_item_ck(url):
                     driver.get(url)
                     time.sleep(3)
                     code = driver.page_source
                     soup = bs(code, 'html.parser')
-                    pro_num = url.split('=')[1].split('&')[0]
-                    file_name = 'cou' + '_' + now.split('.')[0].replace('-', '').replace(' ', '_').replace(':', '') + '_' + pro_num
+                    string = url.split('?')[0]
+                    pro_num = re.sub(r'[^0-9]', '', string)
+                    file_name = 'today'+'_'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
 
                     # text #text #text #text #text #text #text #text
                     # 01 상단
                     # log
-                    self.log_update.emit(f'쿠팡 [텍스트 상단] 확인 중..')
-                    main = soup.find('div', class_='prod-atf-main').text.strip().replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
+                    self.log_update.emit(f'오늘의집 [텍스트 상단] 확인 중..')
+                    main = soup.find('div', 'production-selling-overview container').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
                     check = txt_check(file_name, main)
                     if check == '동서가구':
+                        self.log_update.emit('동서가구')
                         return '동서가구'
                     elif main.count('현재판매중인상품이아닙니다'):
                         print("품절 상품 / 패스")
                         return
                     
-                    # 02 필수 표기정보
-                    # log
-                    self.log_update.emit(f'쿠팡 [텍스트 필수 표기정보] 확인 중..')
-                    driver.find_element(By.ID, 'itemBrief').click()
-                    brief = soup.find('div', id="itemBrief").text.strip().replace(
-                        " ", "").replace("\n", "").replace("\t", "").replace("\r", "")
-                    check = txt_check(file_name, brief)
-                    if check == '동서가구':
-                        return '동서가구'
-
-                    # 03 배송/교환/반품 안내
-                    # log
-                    self.log_update.emit(f'쿠팡 [텍스트 배송/교환/반품 안내] 확인 중..')
-                    driver.find_element(By.NAME, 'etc').click()
-                    time.sleep(1)
-                    code = driver.page_source
-                    soup = bs(code, 'html.parser')
-                    etc = soup.find('li', class_='product-etc tab-contents__content').text.strip(
-                    ).replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
-                    check = txt_check(file_name, etc)
-                    if check == '동서가구':
-                        return '동서가구'
-                    
                     # img #img #img #img #img #img #img #img #img #img
-                    # 04 이미지
+                    # 04 메인 이미지
                     # log
-                    self.log_update.emit(f'쿠팡 [이미지 대표이미지] 확인 중..')
+                    self.log_update.emit(f'오늘의집 [이미지 대표이미지] 확인 중..')
                     actions = ActionChains(driver)  
                     actions.send_keys(Keys.HOME).perform()  
-                    img_url = 'https:' + soup.find('img', class_="prod-image__detail")['src']
+                    img_url = soup.find('img', class_="production-selling-cover-image__entry__image")['src']
                     print(img_url)
                     ##
                     ##
                     ##
-                    check, hight = img_check(img_url, 640, 150, 100, 300)
+                    hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                     if check == '동서가구':
+                        self.log_update.emit('동서가구')
                         pyautogui.screenshot(f'{file_name}.jpg')
                         print(f'{file_name}.jpg')
 
@@ -1241,14 +1289,22 @@ class WorkerThread_cou(QThread):
                                 blob.upload_from_filename(image_file_path)
                                 print(f'File {file_name} uploaded to {folder_name}')
                                 self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                if os.path.exists('./'+file_name):
+                                    os.remove('./'+file_name)
+                                    print(f"{file_name}가 삭제되었습니다.")
+                                else:
+                                    print(f"{file_name}가 존재하지 않습니다.")
                         return '동서가구'
-                    detail = soup.find('div', id="productDetail")
+                    
+                    # 04 상세이미지
+                    detail = soup.find('div', class_="production-selling-description__content")
                     imgs = detail.find_all('img')
                     print(imgs)
+                    go_out = False
                     imgs_cnt = 1
                     for img in imgs:
                         # log
-                        self.log_update.emit(f'쿠팡 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
+                        self.log_update.emit(f'오늘의집 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
                         imgs_cnt += 1
                         try:
                             src = img['src']
@@ -1256,46 +1312,66 @@ class WorkerThread_cou(QThread):
                             ##
                             ##
                             ##
-                            check, hight = img_check(img_url, 640, 150, 100, 300)
+                            hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                             if check == '동서가구':
-                                count = 0
-                                while count < len(lists):  # len(lists)
-                                    img_element = driver.find_element(By.XPATH, f"//img[@src='{img_url}']")
-                                    print('find img_element')
-                                    location = img_element.location
-                                    print(location)
+                                detail = soup.find('div', class_="production-selling-description__content")
+                                imgs = detail.find_all('img')
+                                self.log_update.emit('동서가구')
+                                for img in imgs:
+                                    src = img['src']
+                                    img_url2 = src
 
-                                    script = "document.querySelector('.product-detail-seemore-btn').click();"
-                                    time.sleep(3)
-                                    driver.execute_script(script)
-                                    if hight < 50:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*1.7});")
-                                    elif 50 < hight < 80:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)});")
-                                    else:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*0.5});")
-                                    time.sleep(2)
-                                    pyautogui.screenshot(f'{file_name}.jpg')
-                                    image_file_path = f'{file_name}.jpg'
+                                    img_element = driver.find_element(By.XPATH, f"//img[@src='{img_url2}']")
 
-                                    for brand in brand_lists:
-                                        if brand in file_name:
-                                            # make bucket and get folder name for each brand
-                                            bucket = storage.bucket()
-                                            folder_name = get_week_of_month()
-                                            folder_blob = bucket.blob(folder_name)
+                                    driver.execute_script("arguments[0].scrollIntoView(true);", img_element)
+                                    time.sleep(.5)
+                                    scroll_y = driver.execute_script('return window.scrollY;')
 
-                                            # check specific folder name exist or not
-                                            if not folder_blob.exists():
-                                                print(f'Creating folder {folder_name}')
-                                                folder_blob.upload_from_string('')
 
-                                            # Upload a file to the folder
-                                            blob = bucket.blob(f'{folder_name}/{image_file_path}')
-                                            blob.upload_from_filename(image_file_path)
-                                            print(f'File {file_name} uploaded to {folder_name}')
-                                            break
-                                    break
+                                    if img_url == img_url2:
+                                        go_out = True
+                                        if img_hight < 300:
+                                            driver.execute_script(f'window.scrollTo(0, {str(int(scroll_y)-int(img_hight*2))});')
+                                        elif hight > 800:
+                                            hight = hight*.7
+                                            driver.execute_script(f'window.scrollTo(0, {str(int(scroll_y)+int(hight))});')
+                                        time.sleep(.5)
+
+                                        print('scroll_y', scroll_y)
+                                        print('hight', hight)
+                                        print('img_hight', img_hight)
+
+                                        pyautogui.screenshot(f'{file_name}_img.jpg')
+                                        print(f'{file_name}_img.jpg')
+
+                                        image_file_path = f'{file_name}_img.jpg'
+                                        for brand in brand_lists:
+                                            if brand in file_name:
+
+                                                #make bucket and get folder name for each brand
+                                                bucket = storage.bucket()
+                                                folder_name = get_week_of_month()
+                                                folder_blob = bucket.blob(folder_name)
+
+                                                #check specific folder name exist or not
+                                                if not folder_blob.exists():
+                                                    print(f'Creating folder {folder_name}')
+                                                    folder_blob.upload_from_string('')
+
+                                                # Upload a file to the folder
+                                                blob = bucket.blob(f'{folder_name}/{image_file_path}')
+                                                blob.upload_from_filename(image_file_path)
+                                                print(f'File {file_name} uploaded to {folder_name}')
+                                                self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                                if os.path.exists('./'+file_name):
+                                                    os.remove('./'+file_name)
+                                                    print(f"{file_name}가 삭제되었습니다.")
+                                                else:
+                                                    print(f"{file_name}가 존재하지 않습니다.")
+                                                break
+                                    if go_out == True:
+                                        break
+                            if go_out == True:
                                 break
                         except:
                             pass
@@ -1311,7 +1387,7 @@ class WorkerThread_cou(QThread):
 
                 if check == '동서가구':
                     lists[li] = [lists[li], '스캔필요']
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('o_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('스캔필요')
@@ -1322,7 +1398,7 @@ class WorkerThread_cou(QThread):
                 else:
                     lists[li] = [lists[li], '패스']
                     # list_test csv파일로 저장
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('o_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('패스')
@@ -1332,75 +1408,56 @@ class WorkerThread_cou(QThread):
                 percent = int((li+1)/(len(lists)/100))
                 # log
                 self.progress_update.emit(percent)
-        elif self.test == '인터파크':
+        # interpark
+        # interpark
+        # interpark
+        elif self.test == 'interpark':
             self.log_update.emit(f'firebase 서버 접속')
             if ex_ip != '183.100.232.2444':
-                lists, start_cnt = open_csv('cou') # cou_list.csv
-                brand_lists = brand()   
+                lists, start_cnt = open_csv('inter') # inter_list.csv
+                # brand_lists = brand()   
                 def EA_cou_item_ck(url):
                     driver.get(url)
                     time.sleep(3)
                     code = driver.page_source
                     soup = bs(code, 'html.parser')
-                    pro_num = url.split('=')[1].split('&')[0]
-                    file_name = 'cou' + '_' + now.split('.')[0].replace('-', '').replace(' ', '_').replace(':', '') + '_' + pro_num
+                    pro_num = url.split("=")[1]
+                    file_name = 'interpark'+'_'+now.split('.')[0].replace('-','').replace(' ','_').replace(':','') + '_' + pro_num
 
                     # text #text #text #text #text #text #text #text
                     # 01 상단
                     # log
-                    self.log_update.emit(f'쿠팡 [텍스트 상단] 확인 중..')
-                    main = soup.find('div', class_='prod-atf-main').text.strip().replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
+                    self.log_update.emit(f'인터파크 [텍스트 상단] 확인 중..')
+                    main = soup.find('div', 'productTopRight').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
                     check = txt_check(file_name, main)
                     if check == '동서가구':
+                        self.log_update.emit('동서가구')
                         return '동서가구'
                     elif main.count('현재판매중인상품이아닙니다'):
                         print("품절 상품 / 패스")
                         return
                     
-                    # 02 필수 표기정보
-                    # log
-                    self.log_update.emit(f'쿠팡 [텍스트 필수 표기정보] 확인 중..')
-                    driver.find_element(By.ID, 'itemBrief').click()
-                    brief = soup.find('div', id="itemBrief").text.strip().replace(
-                        " ", "").replace("\n", "").replace("\t", "").replace("\r", "")
-                    check = txt_check(file_name, brief)
-                    if check == '동서가구':
-                        return '동서가구'
-
-                    # 03 배송/교환/반품 안내
-                    # log
-                    self.log_update.emit(f'쿠팡 [텍스트 배송/교환/반품 안내] 확인 중..')
-                    driver.find_element(By.NAME, 'etc').click()
-                    time.sleep(1)
-                    code = driver.page_source
-                    soup = bs(code, 'html.parser')
-                    etc = soup.find('li', class_='product-etc tab-contents__content').text.strip(
-                    ).replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
-                    check = txt_check(file_name, etc)
-                    if check == '동서가구':
-                        return '동서가구'
                     
                     # img #img #img #img #img #img #img #img #img #img
                     # 04 이미지
                     # log
-                    self.log_update.emit(f'쿠팡 [이미지 대표이미지] 확인 중..')
+                    self.log_update.emit(f'인터파크 [이미지 대표이미지] 확인 중..')
                     actions = ActionChains(driver)  
                     actions.send_keys(Keys.HOME).perform()  
-                    img_url = 'https:' + soup.find('img', class_="prod-image__detail")['src']
+                    img_url = soup.find('div', class_='viewImage')
+                    img_url = img_url.find('img')['src']
                     print(img_url)
                     ##
                     ##
                     ##
-                    check, hight = img_check(img_url, 640, 150, 100, 300)
+                    hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                     if check == '동서가구':
                         pyautogui.screenshot(f'{file_name}.jpg')
                         print(f'{file_name}.jpg')
 
                         image_file_path = f'{file_name}.jpg'
                         for brand in brand_lists:
-
                             if brand in file_name:
-
                                 # make bucket and get folder name for each brand
                                 bucket = storage.bucket()
                                 folder_name = get_week_of_month()
@@ -1417,13 +1474,23 @@ class WorkerThread_cou(QThread):
                                 print(f'File {file_name} uploaded to {folder_name}')
                                 self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
                         return '동서가구'
-                    detail = soup.find('div', id="productDetail")
+                    
+
+                    # 05. 상세이미지
+                    iframes = driver.find_elements(By.TAG_NAME, "iframe")
+                    print(len(iframes))
+                    for ifr in iframes:
+                        if ifr.get_attribute('title').count('상품상세') > 0:
+                            driver.switch_to.frame(ifr)
+                            detail = bs(driver.page_source, 'html.parser')
+                            break
+                    
                     imgs = detail.find_all('img')
-                    print(imgs)
+                    go_out = False
                     imgs_cnt = 1
                     for img in imgs:
                         # log
-                        self.log_update.emit(f'쿠팡 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
+                        self.log_update.emit(f'인터파크 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
                         imgs_cnt += 1
                         try:
                             src = img['src']
@@ -1431,46 +1498,65 @@ class WorkerThread_cou(QThread):
                             ##
                             ##
                             ##
-                            check, hight = img_check(img_url, 640, 150, 100, 300)
+                            hight, img_hight, check = img_check(img_url,640,150,100,300)
                             if check == '동서가구':
-                                count = 0
-                                while count < len(lists):  # len(lists)
-                                    img_element = driver.find_element(By.XPATH, f"//img[@src='{img_url}']")
-                                    print('find img_element')
-                                    location = img_element.location
-                                    print(location)
+                                detail = bs(driver.page_source, 'html.parser')
+                                imgs = detail.find_all('img')
 
-                                    script = "document.querySelector('.product-detail-seemore-btn').click();"
-                                    time.sleep(3)
-                                    driver.execute_script(script)
-                                    if hight < 50:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*1.7});")
-                                    elif 50 < hight < 80:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)});")
-                                    else:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*0.5});")
-                                    time.sleep(2)
-                                    pyautogui.screenshot(f'{file_name}.jpg')
-                                    image_file_path = f'{file_name}.jpg'
+                                for img in imgs:
+                                    src = img['src']
+                                    img_url2 = src
+                                    img_element = driver.find_element(By.XPATH, f"//img[@src='{img_url2}']")
 
-                                    for brand in brand_lists:
-                                        if brand in file_name:
-                                            # make bucket and get folder name for each brand
-                                            bucket = storage.bucket()
-                                            folder_name = get_week_of_month()
-                                            folder_blob = bucket.blob(folder_name)
+                                    driver.execute_script("arguments[0].scrollIntoView(true);", img_element)
+                                    time.sleep(.5)
+                                    scroll_y = driver.execute_script('return window.scrollY;')
 
-                                            # check specific folder name exist or not
-                                            if not folder_blob.exists():
-                                                print(f'Creating folder {folder_name}')
-                                                folder_blob.upload_from_string('')
 
-                                            # Upload a file to the folder
-                                            blob = bucket.blob(f'{folder_name}/{image_file_path}')
-                                            blob.upload_from_filename(image_file_path)
-                                            print(f'File {file_name} uploaded to {folder_name}')
-                                            break
-                                    break
+                                    if img_url == img_url2:
+                                        go_out = True
+                                        if img_hight < 300:
+                                            driver.execute_script(f'window.scrollTo(0, {str(int(scroll_y)-int(img_hight*2))});')
+                                        elif hight > 800:
+                                            hight = hight*.7
+                                            driver.execute_script(f'window.scrollTo(0, {str(int(scroll_y)+int(hight))});')
+                                        time.sleep(.5)
+
+                                        print('scroll_y', scroll_y)
+                                        print('hight', hight)
+                                        print('img_hight', img_hight)
+                                        
+                                        pyautogui.screenshot(f'{file_name}.jpg')
+                                        print(f'{file_name}.jpg')
+
+                                        image_file_path = f'{file_name}.jpg'
+                                        for brand in brand_lists:
+                                            if brand in file_name:
+
+                                                #make bucket and get folder name for each brand
+                                                bucket = storage.bucket()
+                                                folder_name = get_week_of_month()
+                                                folder_blob = bucket.blob(folder_name)
+
+                                                #check specific folder name exist or not
+                                                if not folder_blob.exists():
+                                                    print(f'Creating folder {folder_name}')
+                                                    folder_blob.upload_from_string('')
+
+                                                # Upload a file to the folder
+                                                blob = bucket.blob(f'{folder_name}/{image_file_path}')
+                                                blob.upload_from_filename(image_file_path)
+                                                print(f'File {file_name} uploaded to {folder_name}')
+                                                self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                                if os.path.exists('./'+file_name):
+                                                    os.remove('./'+file_name)
+                                                    print(f"{file_name}가 삭제되었습니다.")
+                                                else:
+                                                    print(f"{file_name}가 존재하지 않습니다.")
+                                                break
+                                    if go_out == True:
+                                        break
+                            if go_out == True:
                                 break
                         except:
                             pass
@@ -1486,7 +1572,7 @@ class WorkerThread_cou(QThread):
 
                 if check == '동서가구':
                     lists[li] = [lists[li], '스캔필요']
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('inter_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('스캔필요')
@@ -1497,7 +1583,7 @@ class WorkerThread_cou(QThread):
                 else:
                     lists[li] = [lists[li], '패스']
                     # list_test csv파일로 저장
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('inter_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('패스')
@@ -1507,24 +1593,27 @@ class WorkerThread_cou(QThread):
                 percent = int((li+1)/(len(lists)/100))
                 # log
                 self.progress_update.emit(percent)
-        elif self.test == '옥션':
+        # auction
+        # auction
+        # auction
+        elif self.test == 'auction':
             self.log_update.emit(f'firebase 서버 접속')
             if ex_ip != '183.100.232.2444':
-                lists, start_cnt = open_csv('cou') # cou_list.csv
-                brand_lists = brand()   
+                lists, start_cnt = open_csv('auc') # cou_list.csv
+                # brand_lists = brand()   
                 def EA_cou_item_ck(url):
                     driver.get(url)
                     time.sleep(3)
                     code = driver.page_source
                     soup = bs(code, 'html.parser')
-                    pro_num = url.split('=')[1].split('&')[0]
-                    file_name = 'cou' + '_' + now.split('.')[0].replace('-', '').replace(' ', '_').replace(':', '') + '_' + pro_num
+                    pro_num = url.split('=')[1]
+                    file_name = 'auction' + '_' + now.split('.')[0].replace('-', '').replace(' ', '_').replace(':', '') + '_' + pro_num
 
                     # text #text #text #text #text #text #text #text
                     # 01 상단
                     # log
-                    self.log_update.emit(f'쿠팡 [텍스트 상단] 확인 중..')
-                    main = soup.find('div', class_='prod-atf-main').text.strip().replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
+                    self.log_update.emit(f'옥션 [텍스트 상단] 확인 중..')
+                    main = soup.find('div', 'item-topinfo').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
                     check = txt_check(file_name, main)
                     if check == '동서가구':
                         return '동서가구'
@@ -1532,41 +1621,19 @@ class WorkerThread_cou(QThread):
                         print("품절 상품 / 패스")
                         return
                     
-                    # 02 필수 표기정보
-                    # log
-                    self.log_update.emit(f'쿠팡 [텍스트 필수 표기정보] 확인 중..')
-                    driver.find_element(By.ID, 'itemBrief').click()
-                    brief = soup.find('div', id="itemBrief").text.strip().replace(
-                        " ", "").replace("\n", "").replace("\t", "").replace("\r", "")
-                    check = txt_check(file_name, brief)
-                    if check == '동서가구':
-                        return '동서가구'
 
-                    # 03 배송/교환/반품 안내
-                    # log
-                    self.log_update.emit(f'쿠팡 [텍스트 배송/교환/반품 안내] 확인 중..')
-                    driver.find_element(By.NAME, 'etc').click()
-                    time.sleep(1)
-                    code = driver.page_source
-                    soup = bs(code, 'html.parser')
-                    etc = soup.find('li', class_='product-etc tab-contents__content').text.strip(
-                    ).replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
-                    check = txt_check(file_name, etc)
-                    if check == '동서가구':
-                        return '동서가구'
-                    
                     # img #img #img #img #img #img #img #img #img #img
                     # 04 이미지
                     # log
-                    self.log_update.emit(f'쿠팡 [이미지 대표이미지] 확인 중..')
-                    actions = ActionChains(driver)  
-                    actions.send_keys(Keys.HOME).perform()  
-                    img_url = 'https:' + soup.find('img', class_="prod-image__detail")['src']
+                    button = driver.find_element(By.CLASS_NAME, "button__detail-more.js-toggle-button")
+                    button.click()
+                    img_url = soup.find('div', class_='box__viewer-container')
+                    img_url = 'https:' + img_url.find('img')['src'] 
                     print(img_url)
                     ##
                     ##
                     ##
-                    check, hight = img_check(img_url, 640, 150, 100, 300)
+                    hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                     if check == '동서가구':
                         pyautogui.screenshot(f'{file_name}.jpg')
                         print(f'{file_name}.jpg')
@@ -1591,14 +1658,27 @@ class WorkerThread_cou(QThread):
                                 blob.upload_from_filename(image_file_path)
                                 print(f'File {file_name} uploaded to {folder_name}')
                                 self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                if os.path.exists('./'+file_name):
+                                    os.remove('./'+file_name)
+                                    print(f"{file_name}가 삭제되었습니다.")
+                                else:
+                                    print(f"{file_name}가 존재하지 않습니다.")
+                                
                         return '동서가구'
-                    detail = soup.find('div', id="productDetail")
-                    imgs = detail.find_all('img')
+                    # 05 상세이미지
+
+                    iframe = driver.find_element(By.ID,'hIfrmExplainView')
+                    driver.switch_to.frame(iframe)
+                    time.sleep(2)
+                    iframe_html = driver.page_source
+                    iframe_html = bs(iframe_html,'html.parser')
+                    imgs = iframe_html.find_all('img')
                     print(imgs)
+
                     imgs_cnt = 1
                     for img in imgs:
                         # log
-                        self.log_update.emit(f'쿠팡 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
+                        self.log_update.emit(f'옥션 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
                         imgs_cnt += 1
                         try:
                             src = img['src']
@@ -1606,7 +1686,8 @@ class WorkerThread_cou(QThread):
                             ##
                             ##
                             ##
-                            check, hight = img_check(img_url, 640, 150, 100, 300)
+
+                            hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                             if check == '동서가구':
                                 count = 0
                                 while count < len(lists):  # len(lists)
@@ -1615,27 +1696,23 @@ class WorkerThread_cou(QThread):
                                     location = img_element.location
                                     print(location)
 
-                                    script = "document.querySelector('.product-detail-seemore-btn').click();"
-                                    time.sleep(3)
-                                    driver.execute_script(script)
-                                    if hight < 50:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*1.7});")
-                                    elif 50 < hight < 80:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)});")
-                                    else:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*0.5});")
-                                    time.sleep(2)
-                                    pyautogui.screenshot(f'{file_name}.jpg')
-                                    image_file_path = f'{file_name}.jpg'
 
+                                    time.sleep(3)
+                                    img_element.click()
+                                    driver.execute_script(f"window.scrollBy(0,{int(location['y']) - int(hight)*0.5});")
+                                    time.sleep(3)
+
+                                    pyautogui.screenshot(f'{file_name}.jpg')
+                                    print(f'{file_name}.jpg')
+                                    image_file_path = f'{file_name}.jpg'
                                     for brand in brand_lists:
                                         if brand in file_name:
-                                            # make bucket and get folder name for each brand
+                                            #make bucket and get folder name for each brand
                                             bucket = storage.bucket()
                                             folder_name = get_week_of_month()
                                             folder_blob = bucket.blob(folder_name)
 
-                                            # check specific folder name exist or not
+                                            #check specific folder name exist or not
                                             if not folder_blob.exists():
                                                 print(f'Creating folder {folder_name}')
                                                 folder_blob.upload_from_string('')
@@ -1644,12 +1721,19 @@ class WorkerThread_cou(QThread):
                                             blob = bucket.blob(f'{folder_name}/{image_file_path}')
                                             blob.upload_from_filename(image_file_path)
                                             print(f'File {file_name} uploaded to {folder_name}')
-                                            break
+                                            self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                            if os.path.exists('./'+file_name):
+                                                os.remove('./'+file_name)
+                                                print(f"{file_name}가 삭제되었습니다.")
+                                            else:
+                                                print(f"{file_name}가 존재하지 않습니다.")
+                                    count +=1
                                     break
                                 break
                         except:
                             pass
                     return check
+                
             print('시작', datetime.datetime.now())
             for li in range(start_cnt, len(lists)):
                 #log
@@ -1661,7 +1745,7 @@ class WorkerThread_cou(QThread):
 
                 if check == '동서가구':
                     lists[li] = [lists[li], '스캔필요']
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('auc_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('스캔필요')
@@ -1672,7 +1756,7 @@ class WorkerThread_cou(QThread):
                 else:
                     lists[li] = [lists[li], '패스']
                     # list_test csv파일로 저장
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('auc_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('패스')
@@ -1682,24 +1766,27 @@ class WorkerThread_cou(QThread):
                 percent = int((li+1)/(len(lists)/100))
                 # log
                 self.progress_update.emit(percent)
-        elif self.test == '지마켓':
+        # gmarket
+        # gmarket
+        # gmarket
+        elif self.test == 'gmarket':
             self.log_update.emit(f'firebase 서버 접속')
             if ex_ip != '183.100.232.2444':
-                lists, start_cnt = open_csv('cou') # cou_list.csv
-                brand_lists = brand()   
+                lists, start_cnt = open_csv('gm') # cou_list.csv
+                # brand_lists = brand()   
                 def EA_cou_item_ck(url):
                     driver.get(url)
                     time.sleep(3)
                     code = driver.page_source
                     soup = bs(code, 'html.parser')
-                    pro_num = url.split('=')[1].split('&')[0]
-                    file_name = 'cou' + '_' + now.split('.')[0].replace('-', '').replace(' ', '_').replace(':', '') + '_' + pro_num
+                    pro_num = url.split('=')[1]
+                    file_name = 'gmarket' + '_' + now.split('.')[0].replace('-', '').replace(' ', '_').replace(':', '') + '_' + pro_num
 
                     # text #text #text #text #text #text #text #text
                     # 01 상단
                     # log
-                    self.log_update.emit(f'쿠팡 [텍스트 상단] 확인 중..')
-                    main = soup.find('div', class_='prod-atf-main').text.strip().replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
+                    self.log_update.emit(f'지마켓 [텍스트 상단] 확인 중..')
+                    main = soup.find('div', 'item-topinfo').text.strip().replace(" ", "").replace("\n","").replace("\t","").replace("\r","")
                     check = txt_check(file_name, main)
                     if check == '동서가구':
                         return '동서가구'
@@ -1707,41 +1794,21 @@ class WorkerThread_cou(QThread):
                         print("품절 상품 / 패스")
                         return
                     
-                    # 02 필수 표기정보
-                    # log
-                    self.log_update.emit(f'쿠팡 [텍스트 필수 표기정보] 확인 중..')
-                    driver.find_element(By.ID, 'itemBrief').click()
-                    brief = soup.find('div', id="itemBrief").text.strip().replace(
-                        " ", "").replace("\n", "").replace("\t", "").replace("\r", "")
-                    check = txt_check(file_name, brief)
-                    if check == '동서가구':
-                        return '동서가구'
 
-                    # 03 배송/교환/반품 안내
-                    # log
-                    self.log_update.emit(f'쿠팡 [텍스트 배송/교환/반품 안내] 확인 중..')
-                    driver.find_element(By.NAME, 'etc').click()
-                    time.sleep(1)
-                    code = driver.page_source
-                    soup = bs(code, 'html.parser')
-                    etc = soup.find('li', class_='product-etc tab-contents__content').text.strip(
-                    ).replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
-                    check = txt_check(file_name, etc)
-                    if check == '동서가구':
-                        return '동서가구'
-                    
                     # img #img #img #img #img #img #img #img #img #img
                     # 04 이미지
                     # log
-                    self.log_update.emit(f'쿠팡 [이미지 대표이미지] 확인 중..')
+                    self.log_update.emit(f'지마켓 [이미지 대표이미지] 확인 중..')
                     actions = ActionChains(driver)  
                     actions.send_keys(Keys.HOME).perform()  
-                    img_url = 'https:' + soup.find('img', class_="prod-image__detail")['src']
+                    img_url = soup.find('div', class_="box__viewer-container")
+                    img_url = img_url.find('img')['src']
                     print(img_url)
+
                     ##
                     ##
                     ##
-                    check, hight = img_check(img_url, 640, 150, 100, 300)
+                    hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                     if check == '동서가구':
                         pyautogui.screenshot(f'{file_name}.jpg')
                         print(f'{file_name}.jpg')
@@ -1766,14 +1833,26 @@ class WorkerThread_cou(QThread):
                                 blob.upload_from_filename(image_file_path)
                                 print(f'File {file_name} uploaded to {folder_name}')
                                 self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                if os.path.exists('./'+file_name):
+                                    os.remove('./'+file_name)
+                                    print(f"{file_name}가 삭제되었습니다.")
+                                else:
+                                    print(f"{file_name}가 존재하지 않습니다.")
                         return '동서가구'
-                    detail = soup.find('div', id="productDetail")
-                    imgs = detail.find_all('img')
+                    
+                    # 05 상세이미지
+                    iframes = driver.find_element(By.XPATH,"//iframe[@id='detail1']")
+                    driver.switch_to.frame(iframes)
+                    time.sleep(2)
+                    iframe_html = driver.page_source
+                    iframe_html = bs(iframe_html,'html.parser')
+                    imgs = iframe_html.find_all('img')
                     print(imgs)
+
                     imgs_cnt = 1
                     for img in imgs:
                         # log
-                        self.log_update.emit(f'쿠팡 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
+                        self.log_update.emit(f'지마켓 [이미지 상세이미지] 확인 중 ({imgs_cnt}/{len(imgs)})..')
                         imgs_cnt += 1
                         try:
                             src = img['src']
@@ -1781,7 +1860,7 @@ class WorkerThread_cou(QThread):
                             ##
                             ##
                             ##
-                            check, hight = img_check(img_url, 640, 150, 100, 300)
+                            hight, img_hight, check = img_check(img_url, 640, 150, 100, 300)
                             if check == '동서가구':
                                 count = 0
                                 while count < len(lists):  # len(lists)
@@ -1793,24 +1872,20 @@ class WorkerThread_cou(QThread):
                                     script = "document.querySelector('.product-detail-seemore-btn').click();"
                                     time.sleep(3)
                                     driver.execute_script(script)
-                                    if hight < 50:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*1.7});")
-                                    elif 50 < hight < 80:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)});")
-                                    else:
-                                        driver.execute_script(f"window.scrollBy(0, {int(location['y']) - int(hight)*0.5});")
+                                    driver.execute_script(f"window.scrollBy(0, {location['y']}")
                                     time.sleep(2)
                                     pyautogui.screenshot(f'{file_name}.jpg')
                                     image_file_path = f'{file_name}.jpg'
 
                                     for brand in brand_lists:
                                         if brand in file_name:
-                                            # make bucket and get folder name for each brand
+
+                                            #make bucket and get folder name for each brand
                                             bucket = storage.bucket()
                                             folder_name = get_week_of_month()
                                             folder_blob = bucket.blob(folder_name)
 
-                                            # check specific folder name exist or not
+                                            #check specific folder name exist or not
                                             if not folder_blob.exists():
                                                 print(f'Creating folder {folder_name}')
                                                 folder_blob.upload_from_string('')
@@ -1819,12 +1894,19 @@ class WorkerThread_cou(QThread):
                                             blob = bucket.blob(f'{folder_name}/{image_file_path}')
                                             blob.upload_from_filename(image_file_path)
                                             print(f'File {file_name} uploaded to {folder_name}')
-                                            break
+                                            self.log_update.emit(f'File {file_name} uploaded to {folder_name}')
+                                            if os.path.exists('./'+file_name):
+                                                os.remove('./'+file_name)
+                                                print(f"{file_name}가 삭제되었습니다.")
+                                            else:
+                                                print(f"{file_name}가 존재하지 않습니다.")
+                                    count +=1
                                     break
                                 break
                         except:
                             pass
                     return check
+                
             print('시작', datetime.datetime.now())
             for li in range(start_cnt, len(lists)):
                 #log
@@ -1835,8 +1917,9 @@ class WorkerThread_cou(QThread):
                 check = EA_cou_item_ck(lists[li])
 
                 if check == '동서가구':
+                    self.log_update.emit('동서가구')
                     lists[li] = [lists[li], '스캔필요']
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('gm_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('스캔필요')
@@ -1847,7 +1930,7 @@ class WorkerThread_cou(QThread):
                 else:
                     lists[li] = [lists[li], '패스']
                     # list_test csv파일로 저장
-                    with open('cou_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
+                    with open('gm_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lists])
                     print('패스')
@@ -1865,32 +1948,35 @@ class MyApp(QMainWindow):
         self.initUI()
         self.thread_running = False
 
-    def closeEvent(self, event):
-        reply = QMessageBox.question(self, 'Confirm Close', 'Are you sure you want to exit?',QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            # 크롬, 크롬드라이버 프로세서 종료
-            processes = [p for p in psutil.process_iter(
-                ['pid', 'name', 'create_time'])]
-            processes_sorted = sorted(
-                processes, key=lambda x: x.info['create_time'], reverse=True)
+        def closeEvent(self, event):
+            reply = QMessageBox.question(self, 'Confirm Close', 'Are you sure you want to exit?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                #크롬, 크롬드라이버 프로세서 종료
+                processes = [p for p in psutil.process_iter(['pid', 'name', 'create_time'])]
+                processes_sorted = sorted(processes, key=lambda x: x.info['create_time'], reverse=True)
 
-            for process in processes_sorted:
-                print(
-                    f"PID: {process.info['pid']} Name: {process.info['name']} Created: {process.create_time()}")
+                #프로세스 내 chromedriver.exe가 있으면 chrome, chromedriver 종료
+                for process in processes_sorted:
+                    print(f"PID: {process.info['pid']} Name: {process.info['name']} Created: {process.create_time()}")
+                    if process.info['name'] == 'chromedriver.exe':
 
-                if process.info['name'] == 'chrome.exe':
-                    process_id = process.info['pid']
-                    process = psutil.Process(process_id)
-                    process.terminate()
-                elif process.info['name'] == 'chromedriver.exe':
-                    process_id = process.info['pid']
-                    process = psutil.Process(process_id)
-                    process.terminate()
-                    break
-            event.accept()
-        else:
-            # ignore the close event
-            event.ignore()
+                        for process in processes_sorted:
+                            print(f"PID: {process.info['pid']} Name: {process.info['name']} Created: {process.create_time()}")
+
+                            if process.info['name'] == 'chrome.exe':
+                                process_id = process.info['pid']
+                                process = psutil.Process(process_id)
+                                process.terminate()
+                            elif process.info['name'] == 'chromedriver.exe':
+                                process_id = process.info['pid']
+                                process = psutil.Process(process_id)
+                                process.terminate()
+                                break
+                        event.accept()
+                event.accept()
+            else:
+                # ignore the close event
+                event.ignore()
 
     def initUI(self):
         쿠팡 = QAction('쿠팡', self)
@@ -2454,7 +2540,7 @@ class MyApp(QMainWindow):
 
         self.toolbar.setEnabled(False)
 
-        label_1 = QLabel('지마켓켓 수집')
+        label_1 = QLabel('지마켓 수집')
         label_log = QLabel('log')
         progressBar = QProgressBar()
         progressBar.setValue(0)
