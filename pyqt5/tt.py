@@ -1,3 +1,9 @@
+from google.cloud import storage
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import storage as firebase_storage
+import math
+
 import sys
 import psutil
 import json
@@ -76,7 +82,7 @@ else:
 
 
 
-class WorkerThread_cou(QThread):
+class WorkerThread_mall(QThread):
     progress_update = pyqtSignal(int)
     log_update = pyqtSignal(str)
     log_img_update = pyqtSignal(str)
@@ -1952,92 +1958,104 @@ class WorkerThread_list_get(QThread):
     log_update2 = pyqtSignal(str)
 
     def run(self):
-        def get_list():
-            brand_lists = ['11', 'lotte', 'sin', 'naver', 'today','gmarket', 'auction', 'interpark', 'coupang']
+        def get_week():
+            def get_week_of_month(date):
+                first_day = date.replace(day=1)
+                adjusted_day = first_day + datetime.timedelta(days=(6 - first_day.weekday()))
+                week_number = (date - adjusted_day).days // 7 + 2
+                return week_number
+
+            # Firebase Storage 인스턴스 생성
+            bucket = firebase_storage.bucket()
+
+            blobs = bucket.list_blobs()
+
+
+            # 현재 날짜 구하기
+            current_date = datetime.date.today()
+
+            # 현재 월의 주차와 월 출력
+            week_of_month = get_week_of_month(current_date)
+            month = current_date.strftime("%m월")
+            date = month[1:3] + str(week_of_month) + '주차'
+            for l in list(range(10,12)): # 10월 11월 12월
+                if str(l) in month:
+                    date = month[:3] + str(week_of_month) + '주차'
+                    print(date)
+            for blob in blobs:
+                # print(blob.name)
+                folder_name = blob.name.split('/')[0]
+                if date == folder_name:
+                    print(f'{date}는 이미 다운로드 되어있는 주차입니다.')
+                    return date,'다운로드 필요없음'
+            return date,'다운로드 필요'
+        
+        def get_list(date):
+            brand_lists = ['11', 'lotte', 'sin', 'naver', 'today','gmarket', 'auction', 'interpark']
             cnt = 1
+            ratio = 11
+            brand_lists = ['auction','interpark','coupang']
             for brand in brand_lists:
                 if brand == '11':
+                    self.log_update.emit("11번가")
                     json_data = []
                     ll_lists = []
-                    total_pages = 8
-                    for pg in range(1,total_pages+1): #41
-                        print(pg)
+                    for pg in range(1,9): #41
+                        test = int((ratio/8)*pg)
+                        self.progress_update.emit(test)
+
                         url = f'https://search.11st.co.kr/Search.tmall?method=getSearchFilterAjax&kwd=동서가구+장인가구&pageNo={pg}&pageSize=250'
                         response = requests.get(url)
                         response_json = response.json()  # JSON 형식으로 변환
-
                         for i in range(len(response_json['commonPrdList']['items'])):
                             u = response_json['commonPrdList']['items'][i]['productDetailUrl']
                             ll_lists.append(u)
                             print(f"11번가 {len(ll_lists)}")
+                            self.log_update2.emit(f"상세페이지 총 {len(ll_lists)}개 수집")
                             print(u)
-                        progress = 0.11 * pg/9
-                        print(progress)
-                        self.progress_update.emit(int(progress))
-                            
-                    # print(ll_lists)
-                    # print(len(set(ll_lists)))
 
                     with open('11_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([ll_lists])
-                    print(f'11번가 {len(ll_lists)} 상세페이지 파일 업로드')
+                    self.log_update2.emit(f"{date} csv 파일 저장 완료")
+                    print(f'{date} 상세페이지 파일 업로드')
 
                 elif brand == 'lotte':
+                    self.log_update.emit("롯데온")
                     url = 'https://www.lotteimall.com/search/searchMain.lotte?isTemplate=Y&headerQuery=장인가구&colldisplay=3200'
                     response = requests.get(url)
                     json_data = response.json()
-                    temp = json_data['body'][16]['data'] # 15
+                    temp = json_data['body'][15]['data'] # 15 ckp // 기존 16에서 동작되다 오류남 15로 바꾸니 정상동작 왜? 모름
                     # print(len(temp))
                     lotte_lists = []
                     for i in range(len(temp)):
+                        test = int((ratio/len(temp))*i+ratio*1)
+
+                        # log
+                        self.progress_update.emit(test)
                         url = 'https://www.lotteimall.com/goods/viewGoodsDetail.lotte?goods_no=' + str(temp[i]['wishListMap']['goods_no'])
-                        lotte_lists.append(url)
-                        print(f'lotte {len(lotte_lists)}')
                         print(url)
+                        lotte_lists.append(url)
+                        print(f'롯데온 {len(lotte_lists)}')
+                        
+                        # log_update2
+                        self.log_update2.emit(f"상세페이지 총 {len(lotte_lists)}개 수집")
+
                     with open('lot_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([lotte_lists])
-                    print(f'롯데몰 {len(lotte_lists)} 상세페이지 파일 업로드')
-
-
-                elif brand == 'sin':
-                    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'}
-                    page = 1
-                    sin_lists = []
-                    while True:
-                        url = f'https://www.ssg.com/search.ssg?target=all&query=%EC%9E%A5%EC%9D%B8%EA%B0%80%EA%B5%AC%2B%EB%8F%99%EC%84%9C%EA%B0%80%EA%B5%AC&brand=2000020584&count=100&page={page}'
-                        res = requests.get(url, headers=headers, verify=False)
-
-                        ck_end = res.text.count('검색어와 일치하는 상품이 없습니다.')
-                        if ck_end == 1:
-                            #list_test csv파일로 저장
-                            with open('sin_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
-                                write = csv.writer(f)
-                                write.writerows([sin_lists])
-                            break
-                        else:
-                            soup = bs(res.text, 'html.parser')
-                            elem = soup.find("ul", id="idProductImg")
-                            elems = elem.find_all("li")
-                            # print(len(elems))
-                            for el in elems:
-                                url = el['id'].replace('item_unit_','https://www.ssg.com/item/itemView.ssg?itemId=')
-                                sin_lists.append(url)
-                                print(f'sin {len(sin_lists)}')
-                                print(url)
-                            page += 1
-                            time.sleep(3)
-                    print(f'신세계 {len(sin_lists)} 상세페이지 파일 업로드')
+                    self.log_update2.emit(f"{date} csv 파일 저장 완료")
+                    print(f'{date} 상세페이지 파일 업로드')
 
                 elif brand == 'naver':
+                    self.log_update.emit("스마트스토어")
                     nav_lists = []
                     find_word = '/newdf2013/products/'
                     for page in range(1, 23):
+                        test = int((ratio/22)*page+ratio*2)
+                        self.progress_update.emit(test)
                         url = f'https://smartstore.naver.com/newdf2013/category/e78c2895503c4c4e993a71348c4cd9e8?st=POPULAR&dt=IMAGE&page={page}&size=40'
                         res = requests.get(url)
-                        print(res.url)
-
                         html = res.text
                         cnt = html.count(find_word)
 
@@ -2045,16 +2063,19 @@ class WorkerThread_list_get(QThread):
                             html = html[html.find(find_word)+len(find_word):]
                             ea_url = 'https://smartstore.naver.com/newdf2013/products/' + html[:html.find('"')]
                             nav_lists.append(ea_url)
-                            print(f'naver {len(nav_lists)}')
+                            self.log_update2.emit(f"상세페이지 총 {len(nav_lists)}개 수집")
+                            print(f'스마트스토어 {len(nav_lists)}')
                             print(ea_url)
 
                         #list_test csv파일로 저장
                         with open('nav_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                             write = csv.writer(f)
                             write.writerows([nav_lists])
-                    print(f'스마트스토어 {len(nav_lists)} 상세페이지 파일 업로드')
+                    self.log_update2.emit(f"{date} 상세페이지 ")
+                    print(f'{date} 상세페이지 파일 업로드')
 
                 elif brand == 'today':
+                    self.log_update.emit("오늘의집")
                     #옵션 - 셀레니움
                     options = webdriver.ChromeOptions()
                     options.add_argument("--disable-blink_features=AutomationControlled")
@@ -2064,7 +2085,7 @@ class WorkerThread_list_get(QThread):
                     options.add_argument("disable-infobars")
                     options.add_argument("--disable-extionsions")
                     options.add_experimental_option("useAutomationExtension",False)
-                    #options.add_argument("headless")
+                    options.add_argument("headless")
                     options.add_argument("disable-gpu")
                     options.add_argument("lang=ko_KR")
                     driver = webdriver.Chrome(options=options)
@@ -2072,85 +2093,88 @@ class WorkerThread_list_get(QThread):
                     url = 'https://ohou.se/brands/home?query=%EC%9E%A5%EC%9D%B8%EA%B0%80%EA%B5%AC'
 
                     driver.get(url)
-                    time.sleep(3)
+                    time.sleep(1)
 
-                    # Get the height of the viewport
-                    viewport_height = driver.execute_script("return window.innerHeight")
-
-                    # Define the amount to scroll
                     scroll_height = 10000
 
-                    # Scroll down repeatedly
                     o_lists = []
                     while True:
-
+                            
                         html = driver.page_source
                         soup = bs(html, 'html.parser')
 
-                        #
                         elems = soup.find_all('a', 'production-item__overlay')
-                        for el in elems:
-                            temp = 'https://ohou.se' + el['href']
+
+                        for el in range(len(elems)):
+                            temp = 'https://ohou.se' + elems[el]['href']
                             o_lists.append(temp)
+                            self.log_update2.emit(f"상세페이지 총 {len(o_lists)}개 수집")
                             print(f'오늘의집 {len(o_lists)}')
                             print(temp)
                         o_lists = list(dict.fromkeys(o_lists))
+                        test = int((ratio/400)*len(o_lists)+ratio*3)
+                        self.progress_update.emit(test)
 
                         # Scroll down by the defined amount
                         driver.execute_script(f"window.scrollBy(0, {scroll_height});")
-                        time.sleep(5)
+                        time.sleep(1)
 
                         # get the current scroll position
                         scroll_position = driver.execute_script("return window.pageYOffset;")
 
 
                         #마지막 페이지 확인
-                        if 'temp_scroll_postion' in locals() and temp_scroll_postion == scroll_position:
-                            print('last page')
-                            # print(o_lists)
-                            print(len(o_lists))
 
+                        cnt = 0
+                        if 'temp_scroll_postion' in locals() and temp_scroll_postion == scroll_position:
+                            # print(o_lists)
+                            cnt += 1
                             #list_test csv파일로 저장
                             with open('o_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                                 write = csv.writer(f)
                                 write.writerows([o_lists])
+
+
                             break
-
-
                         #아니면 계속 리스트 수집
                         temp_scroll_postion = scroll_position
-                            
-
-                    #아니면 계속 리스트 수집
-                    temp_scroll_postion = scroll_position
-                    print(f'오늘의집 {len(o_lists)} 상세페이지 파일 업로드')
+                    
+                    self.log_update2.emit(f"{date} 상세페이지 파일 업로드")
+                    print(f'{date} 상세페이지 파일 업로드')
 
                 elif brand == 'gmarket':
+                    self.log_update.emit("지마켓")
                     url = 'https://browse.gmarket.co.kr/search?keyword=장인가구+동서가구'
                     response = requests.get(url)
-
-                    html_content = response.text
-                    soup = bs(html_content, 'html.parser')
+                    soup = bs(response.text, 'html.parser')
                     a_tags = soup.find_all('a', 'link__shop')
 
                     url2 = 'http://item.gmarket.co.kr/Item?goodscode='
+
                     gm_lists = []
-                    for tag in a_tags:
-                        tag = str(tag).split(' ')
-                        for t in tag:
-                            if 'data-montelena-goodscode' in t:
-                                t = t.split('=')[1].replace('"','').replace("'","").replace("]","")
-                                gm_lists.append(url2 + t)
-                                print(f"지마켓 {len(gm_lists)})")
-                                print(url2 + t)
+                    for tag in range(len(a_tags)):
+                        test = int((ratio/len(a_tags))*tag+ratio*5)
+                        self.progress_update.emit(test)
+                        gm = url2 + str(a_tags[tag].get('data-montelena-goodscode')).strip('[]"\'')
+                        gm_lists.append(gm)
+                        self.log_update2.emit(f"상세페이지 총 {len(gm_lists)}개 수집")   
+                        print(f'지마켓 {len(gm_lists)}')
+                        print(gm)
+
+
                     with open('gm_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
-                        write = csv.writer(f)
-                        write.writerows([gm_lists])  
-                    print(f'지마켓 {len(gm_lists)} 상세페이지 파일 업로드')
+                        writer = csv.writer(f)
+                        writer.writerow(gm_lists)
+                    
+                    self.log_update2.emit(f"{date} 상세페이지 파일 업로드")
+                    
                     
                 elif brand == 'auction':
+                    self.log_update.emit("옥션")
                     auc_lists = []
                     for pg in range(1,6):
+                        test = int((ratio/5)*pg+ratio*6)
+                        self.progress_update.emit(test)
                         url = f'https://browse.auction.co.kr/search?keyword=%ec%9e%a5%ec%9d%b8%ea%b0%80%ea%b5%ac%2b%eb%8f%99%ec%84%9c%ea%b0%80%ea%b5%ac&itemno=&nickname=&encKeyword=%25EC%259E%25A5%25EC%259D%25B8%25EA%25B0%2580%25EA%25B5%25AC%252B%25EB%258F%2599%25EC%2584%259C%25EA%25B0%2580%25EA%25B5%25AC&arraycategory=&frm=&dom=auction&isSuggestion=No&retry=&k=0&p={pg}'
                         response = requests.get(url)
 
@@ -2162,23 +2186,27 @@ class WorkerThread_list_get(QThread):
                         hrefs = hrefs[::2]
                         for href in hrefs:
                             auc_lists.append(href)
+                            self.log_update2.emit(f"상품페이지 총 {len(auc_lists)}개 수집")
                             print(f'옥션 {len(auc_lists)}')
                             print(href)
-                        # print(url)
-                        # print(pg,'/5')
+                            # print(href)
+
 
                     with open('auc_list.csv', "w", newline='',encoding="utf-8-sig") as f:
                         writer = csv.writer(f)
                         writer.writerows([auc_lists])
-                    print(f'옥션 {len(auc_lists)} 상세페이지 파일 업로드')
+                    self.log_update2.emit(f"{date} 상세페이지 파일 업로드")
 
                 elif brand == 'interpark':
+                    self.log_update.emit("인터파크")
                     url_data = []
-                    for i in range(134):
+                    for i in range(134): 
                         try:
                             url = f'https://shopping.interpark.com/niSearch/shop/listPrdChoiceAndNormal.json?pis1=shop&page={i+1}&keyword=장인가구&rows=52'
                             res = requests.get(url)
                             data = json.loads(res.text)
+                            test = int((ratio/134)*i+ratio*7)
+                            self.progress_update.emit(test)
                             cnt = len(data['data']['listChoiceAndNormal'][0])
                             for j in range(cnt+1):
                                 try:
@@ -2186,6 +2214,7 @@ class WorkerThread_list_get(QThread):
                                     # print(f'{j}/{item_url}')
                                     # print(cnt)
                                     url_data.append(item_url)
+                                    self.log_update2.emit(f"상세페이지 총 {len(url_data)}개 수집")
                                     print(f'인터파크 {len(url_data)}')
                                     print(item_url)
                                 except:
@@ -2197,166 +2226,18 @@ class WorkerThread_list_get(QThread):
                     with open('inter_list.csv', 'w', newline='', encoding='utf-8-sig') as f:
                         write = csv.writer(f)
                         write.writerows([url_data])
-                    print(f'인터파크 {len(url_data)} 상세페이지 파일 업로드')
+                    self.log_update2.emit(f"{date} 상세페이지 파일 업로드")
                     
-                elif brand == 'coupang':
-                    #옵션 - 셀레니움
-                    options = webdriver.ChromeOptions()
-                    options.add_argument("--disable-blink_features=AutomationControlled")
-                    options.add_experimental_option("excludeSwitches",["enable_logging"])
-                    options.add_argument("no_sandbox")
-                    options.add_argument("--start-maximized")
-                    options.add_argument("disable-infobars")
-                    options.add_argument("--disable-extionsions")
-                    options.add_experimental_option("useAutomationExtension",False)
-                    #options.add_argument("headless")
-                    options.add_argument("disable-gpu")
-                    options.add_argument("lang=ko_KR")
-                    driver = webdriver.Chrome(options=options)
-                    actions = ActionChains(driver)
+                # elif brand == 'coupang':
 
-                    # 웹페이지 접속
-                    driver.get("https://store.coupang.com/vp/vendors/A00037308/products")
+                self.progress_update.emit(cnt*ratio)
+                cnt += 1 
 
-                    # 전체 페이지 높이를 저장합니다.
-                    page_height = driver.execute_script("return document.body.scrollHeight")
-
-                    # y축을 전체 높이의 1/3까지 내립니다.
-                    scroll_height = page_height // 2.5
-                    driver.execute_script("window.scrollTo(0, {});".format(scroll_height))
+        date,check = get_week()
+        if check == '다운로드 필요':
+            get_list(date)
 
 
-                    ul_elements = driver.find_elements(By.CLASS_NAME, 'scp-component-filter-options__option-items__btn-fold')
-                    time.sleep(2)
-                    for ul_element in ul_elements:
-                        driver.execute_script("arguments[0].click();", ul_element)
-                        time.sleep(1.5)
-                    html = driver.page_source
-                    with open('html_files.txt', 'w',encoding='utf-8') as f:
-                        f.write(html)
-
-                    soup = bs(html,'html.parser')
-                    li_tags = soup.find_all('li', {'class': 'scp-component-category-item'})
-
-
-                    label_tags = soup.find_all('label')
-                    cnt = 0
-                    tag_list = []
-                    for tag in label_tags:
-                        if str(tag).__contains__('for="component'):
-                            parent = tag.parent
-                            if not str(parent).__contains__ ('href'):
-                                cnt+=1
-                                tag = str(tag).split(sep='=')[1].split(sep='t')[1].split(sep='"')[0]
-                                tag_list.append(tag)
-                        
-
-                    tag_list = tag_list[1:]
-
-                    url_list = []
-                    for tag in tag_list:
-                        url = f'https://store.coupang.com/vp/vendors/A00037308/product/lists?componentId={tag}&pageNum=1'
-                        url_list.append(url)
-                    print(len(url_list))
-                    print(tag_list)
-
-                    # CSV 파일을 쓰기 모드로 열기
-
-                    for num,tag in enumerate(tag_list,start=1):
-
-                            driver = webdriver.Chrome(options=options)
-                            actions = ActionChains(driver)
-
-                            # # driver.get(url)
-                            url = f'https://store.coupang.com/vp/vendors/A00037308/product/lists?componentId={tag}&pageNum=1'
-                            driver.get(url)
-                            elem = driver.find_element(By.TAG_NAME, 'body').text
-
-                            find_word = '"itemTotalCount":'
-                            total_cnt = elem[elem.find(find_word) + len(find_word):]
-                            total_cnt = total_cnt[:total_cnt.find(",")]
-                            print(total_cnt)
-
-                            detail_url = []
-                            file_path = 'detail_url.csv'
-                            for pageNum in range(1, cnt+1): 
-                                url = f'https://store.coupang.com/vp/vendors/A00037308/product/lists?componentId={tag}&pageNum={str(pageNum)}'
-                                driver.get(url)
-                                find_word = 'link'
-                                elem = driver.find_element(By.TAG_NAME, 'body').text
-                                cnt = elem.count(find_word)
-                                for i in range(cnt):
-                                    search2 = elem[elem.find(find_word) + len(find_word)+3:]
-                                    elem = search2
-                                    search2 = search2[:search2.find('"')]
-                                    detail_url.append(search2)
-                            with open(file_path, "a", newline='',encoding="utf-8") as f:
-                                writer = csv.writer(f)
-                                for url in detail_url:
-                                    writer.writerow([url])
-                            time.sleep(2)
-                            print(f'{num}/{len(tag_list)}')
-                            driver.close()                
-            
-                # self.progress_update.emit(cnt*11)
-                # cnt += 1 
-        # def divide_into_intervals(total, num_intervals):
-        #     interval_size = total // num_intervals
-        #     intervals = []
-
-        #     start = 1
-        #     for _ in range(num_intervals - 1):
-        #         end = start + interval_size - 1
-        #         intervals.append(end)
-        #         start = end + 1
-
-        #     intervals.append(total)
-        #     return intervals
-        # endings = divide_into_intervals(100, 9) # [11, 22, 33, 44, 55, 66, 77, 88, 100]
-        # def progress_bar():
-            
-        #     for i in range(101):
-        #         for j in range(len(brand_lists)):
-        #             self.log_update.emit("다운로드 중입니다... 완료시 창이 자동으로 종료 됩니다.")
-        #             self.progress_update.emit(i)
-        #             self.msleep(100)
-
-        #             if j < j + 1:
-        #                 self.log_update2.emit(brand_lists[j])
-        #             else:
-        #                 print('b')
-        #                 break
-
-        get_list()
-
-        # for i in range(101):
-        #     self.log_update.emit("다운로드 중입니다... 완료시 창이 자동으로 종료 됩니다.")
-        #     self.progress_update.emit(i)
-        #     self.msleep(100)
-
-        #     if i < 11:
-        #         self.log_update2.emit("11번가")
-        #     elif i < 22:
-        #         self.log_update2.emit("롯데몰")
-        #     elif i < 33:
-        #         self.log_update2.emit("신세계")
-        #     elif i < 44:
-        #         self.log_update2.emit("스마트스토어")
-
-        #     elif i < 55:
-        #         self.log_update2.emit("오늘의집")
-
-        #     elif i < 66:
-        #         self.log_update2.emit("지마켓")
-
-        #     elif i < 77:
-        #         self.log_update2.emit("옥션")
-
-        #     elif i < 88:
-        #         self.log_update2.emit("인터파크")
-
-        #     elif i < 100:
-        #         self.log_update2.emit("쿠팡")
                 
 
     def stop(self):
@@ -2399,6 +2280,7 @@ class PopupDialog(QDialog):
 
     def close_dialog(self):
         self.close()
+        
 
 class MyApp(QMainWindow):
 
@@ -2491,7 +2373,7 @@ class MyApp(QMainWindow):
         self.toolbar.setEnabled(False)
 
         label_1 = QLabel('쿠팡 수집')
-        label_log = QLabel('log')
+        label_log = QLabel('쿠팡 수집')
         progressBar = QProgressBar()
         progressBar.setValue(0)
         textEdit = QTextEdit()
@@ -2534,7 +2416,7 @@ class MyApp(QMainWindow):
 
         # Create and start the worker thread
         test = '쿠팡'
-        self.worker_thread = WorkerThread_cou(test)
+        self.worker_thread = WorkerThread_mall(test)
         self.worker_thread.log_update.connect(textEdit.append)
         self.worker_thread.log_update.connect(label_log.setText)
         self.worker_thread.log_img_update.connect(textEdit2.append)
@@ -2598,7 +2480,7 @@ class MyApp(QMainWindow):
 
         # Create and start the worker thread
         test = 'llst'
-        self.worker_thread = WorkerThread_cou(test)
+        self.worker_thread = WorkerThread_mall(test)
         self.worker_thread.log_update.connect(textEdit.append)
         self.worker_thread.log_update.connect(label_log.setText)
         self.worker_thread.log_img_update.connect(textEdit2.append)
@@ -2662,7 +2544,7 @@ class MyApp(QMainWindow):
 
         # Create and start the worker thread
         test = 'lot'
-        self.worker_thread = WorkerThread_cou(test)
+        self.worker_thread = WorkerThread_mall(test)
         self.worker_thread.log_update.connect(textEdit.append)
         self.worker_thread.log_update.connect(label_log.setText)
         self.worker_thread.log_img_update.connect(textEdit2.append)
@@ -2727,7 +2609,7 @@ class MyApp(QMainWindow):
 
         # Create and start the worker thread
         test = 'ss'
-        self.worker_thread = WorkerThread_cou(test)
+        self.worker_thread = WorkerThread_mall(test)
         self.worker_thread.log_update.connect(textEdit.append)
         self.worker_thread.log_update.connect(label_log.setText)
         self.worker_thread.log_img_update.connect(textEdit2.append)
@@ -2791,7 +2673,7 @@ class MyApp(QMainWindow):
 
         # Create and start the worker thread
         test = 'sin'
-        self.worker_thread = WorkerThread_cou(test)
+        self.worker_thread = WorkerThread_mall(test)
         self.worker_thread.log_update.connect(textEdit.append)
         self.worker_thread.log_update.connect(label_log.setText)
         self.worker_thread.log_img_update.connect(textEdit2.append)
@@ -2855,7 +2737,7 @@ class MyApp(QMainWindow):
 
         # Create and start the worker thread
         test = 'oj'
-        self.worker_thread = WorkerThread_cou(test)
+        self.worker_thread = WorkerThread_mall(test)
         self.worker_thread.log_update.connect(textEdit.append)
         self.worker_thread.log_update.connect(label_log.setText)
         self.worker_thread.log_img_update.connect(textEdit2.append)
@@ -2919,7 +2801,7 @@ class MyApp(QMainWindow):
 
         # Create and start the worker thread
         test = 'interpark'
-        self.worker_thread = WorkerThread_cou(test)
+        self.worker_thread = WorkerThread_mall(test)
         self.worker_thread.log_update.connect(textEdit.append)
         self.worker_thread.log_update.connect(label_log.setText)
         self.worker_thread.log_img_update.connect(textEdit2.append)
@@ -2983,7 +2865,7 @@ class MyApp(QMainWindow):
 
         # Create and start the worker thread
         test = 'auction'
-        self.worker_thread = WorkerThread_cou(test)
+        self.worker_thread = WorkerThread_mall(test)
         self.worker_thread.log_update.connect(textEdit.append)
         self.worker_thread.log_update.connect(label_log.setText)
         self.worker_thread.log_img_update.connect(textEdit2.append)
@@ -3047,7 +2929,7 @@ class MyApp(QMainWindow):
 
         # Create and start the worker thread
         test = 'gmarket'
-        self.worker_thread = WorkerThread_cou(test)
+        self.worker_thread = WorkerThread_mall(test)
         self.worker_thread.log_update.connect(textEdit.append)
         self.worker_thread.log_update.connect(label_log.setText)
         self.worker_thread.log_img_update.connect(textEdit2.append)
