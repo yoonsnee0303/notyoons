@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Excel Viewer</title>
+        <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <style>
+
+        </style>
+    </head>
+    <body>
+        <input type="file" id="excelFileInput" />
+        <div id="excelDataContainer"></div>
+        <script>
+            var url = "brand_1.csv"
+            axios
+                .get(url)
+                .then(function (result) {
+                    var my_str = result.data.replaceAll('\r', '');
+                    var tableData = my_str.split('\n')
+                    console.log(tableData)
+                    for (i = 0; i < tableData.length; i++) {
+                      tableData[i] = tableData[i].split(",");
+                      tableData[i][3] = tableData[i][3].split("#")[0];
+                    }// console.log(tableData);
+
+                    function formatDate(date) {
+                      var year = date.getFullYear();
+                      var month = String(date.getMonth() + 1)
+                      console.log(month)
+                    }
+                }) 
+                //console.log(tableData);
+
+        </script>
+    <script>
+      // 파일 선택(input) 요소
+      const fileInput = document.getElementById("excelFileInput");
+      // 데이터를 표시할 컨테이너 엘리먼트
+      const dataContainer = document.getElementById("excelDataContainer");
+
+      fileInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          // 데이터를 웹 페이지에 표시
+          displayData(jsonData);
+        };
+
+        reader.readAsArrayBuffer(file);
+      });
+
+      function displayData(data) {
+        // 데이터를 웹 페이지에 표시하는 로직을 여기에 작성
+        // 예를 들어, JSON 데이터를 HTML 테이블로 변환하여 컨테이너 엘리먼트에 추가할 수 있습니다.
+        // 아래는 예시입니다.
+        console.log(data);
+        console.log(typeof data);
+
+        let html = "<table>";
+
+        //div (basicList_item) 상품 리스트
+        //div (basicList_inner) 상품 상세 정보
+        //div (basicList_imgArea) 상품번호
+
+        for (let i = 0; i < data.length; i++) {
+          html += "<tr>";
+
+          for (let j = 0; j < data[i].length; j++) {
+            html += `<td>${data[i][j]}</td>`;
+            
+            if (j == 2) {
+              html += `<td><a href = ${data[i][2].split("#")[1]}><img src = ${
+                data[i][2].split("#")[0]
+              } style="width:50px; height:50px;" alt = 'table'></td>`;
+            }
+          }
+
+          html += "</tr>";
+        }
+
+        html += "</table>";
+
+        dataContainer.innerHTML = html;
+      }
+    </script>
+    </body>
+</html>
