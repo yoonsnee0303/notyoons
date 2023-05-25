@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Draw Chart Example</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+      function drawChart() {
+        var url = "brand_1.csv";
+        axios.get(url).then(function(result) {
+
+          // 첫 번째 행을 헤더로 사용
+          var header = rows[0].split(",");
+
+          var dayIndex = header.indexOf(header[0]);
+          dayIndex = dayIndex.filter(function(weekday) {
+            // 시작 날짜와 종료 날짜 생성
+            var startDate = new Date('2012-05-12');
+            var endDate = new Date('2012-05-18');
+
+            // 날짜 리스트 초기화
+            var dateList = [];
+
+            // 시작 날짜부터 종료 날짜까지의 날짜 구간을 리스트에 추가
+            for (var date = startDate; date <= endDate; date.setDate(date.getDate() + 1)) {
+              dateList.push(new Date(date));
+            }
+
+            if (dayIndex in dateList) {
+              return dayIndex
+            }
+
+          });
+          console.log(dayIndex)
+          var brandIndex = header.indexOf(header[1]);
+          var linkIndex = header.indexOf(header[2]);
+          var nameIndex = header.indexOf(header[3]);
+
+          // for row in rows
+      //     if (columnIndex !== -1) { //indexOf(특정열)이 존재하지 않으면 -1 출력
+      //       var columnValues = [];
+      //       for (var i = 2; i <script rows.length; i++) {
+      //         var row = rows[i].split(",");
+      //         columnValues.push(row[columnIndex]);
+      //       }
+
+      //       console.log(columnValues);
+      //       // 여기서부터 열 값을 활용하여 차트를 그리는 작업을 수행할 수 있습니다.
+      //     } else {
+      //       console.log(`${columnIndex}을 찾을 수 없습니다.`);
+      //     }
+      //   });
+      // }
+      })}
+      // 페이지 로드 완료 후 drawChart 함수 호출
+      document.addEventListener("DOMContentLoaded", function() {
+        drawChart();
+      });
+    </script>
+  </head>
+</html>
