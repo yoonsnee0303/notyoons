@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Draw Chart Example</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.js"></script>
+</head>
+
+<body>
+    <script>
+        function concatenateArray(array) {
+            const concatenatedString = array.join("");
+            return concatenatedString;
+        }
+
+        function wrapWithTags(content, trTag) {
+            const wrappedString = `<${trTag}>${content}</${trTag}>`;
+            return wrappedString;
+        }
+
+        function splitHTTP(newpdtLists) {
+            const filteredArray = newpdtLists.reduce((accumulator, currentValue) =>
+                currentValue.includes('http') || currentValue.includes('https')
+                    ? accumulator.concat(currentValue.split('#'))
+                    : accumulator.concat(currentValue),
+                []);
+
+            return filteredArray;
+        }
+
+        let url = "brand_1.csv";
+        axios.get(url)
+            .then(function (result) {
+                let pdtLists = result.data.split('\n');
+                const newpdtLists = pdtLists.map(item => item.split(','));
+                console.log(newpdtLists[0][3]); //test test test test test test test test test(맥심 모카골드 커피믹스 12g x 170T X 6개)
+                let date = [];
+                let sales = [];
+                for (let i = 0; i < newpdtLists.length; i++) {
+                    for (let j = 0; j < newpdtLists[0].length; j++) {
+                        let currentDate = newpdtLists[i][0];
+                        if ((newpdtLists[i][j] == newpdtLists[0][3]) && (currentDate >= '2023-05-08' && currentDate <= '2023-05-12')) {
+                            console.log(newpdtLists[i])
+
+                            // 매출 계산
+                            date.push(newpdtLists[i][0]); //날짜
+                            sales.push(newpdtLists[i][5]); //가격
+                        }
+                    }
+                }
+                console.log(date);
+                console.log(sales);
+
+                // Load the Google Charts library
+                google.charts.load('current', { 'packages': ['corechart'] });
+                google.charts.setOnLoadCallback(drawChart);
+
+                function drawChart() {
+                  // Create the data table
+                  let data = new google.visualization.DataTable();
+                  data.addColumn('string', '날짜');
+                  data.addColumn('number', '가격');
+
+                  // Add the data rows
+                  for (let i = 0; i < date.length; i++) {
+                      data.addRow([date[i], parseInt(sales[i])]);
+                  }
+
+                  let options = {
+                    title: `${newpdtLists[0][3]}`,
+                    curveType: 'function',
+                    legend: { position: 'bottom' },
+                    vAxis: {
+                        format: '0', // 숫자 형식을 원하는 대로 설정 (예: '0', '0.00', '0%', 등)
+                    }
+                };
+
+
+                  // Create a new BarChart instance
+                  let chart = new google.visualization.BarChart(document.body);
+
+                  // Draw the chart
+                  chart.draw(data, options);
+                }
+            });
+    </script>
+
+</body>
+
+</html>
